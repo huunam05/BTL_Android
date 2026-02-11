@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@android:drawable/ic_menu_rotate"
+        android:title="Trang Chủ" />
+    <item
+        android:id="@+id/nav_stats"
+        android:icon="@android:drawable/ic_menu_sort_by_size"
+        android:title="Thống Kê" />
+    <item
+        android:id="@+id/nav_tools"
+        android:icon="@android:drawable/ic_menu_manage"
+        android:title="Công Cụ" />
+    <item
+        android:id="@+id/nav_settings"
+        android:icon="@android:drawable/ic_menu_preferences"
+        android:title="Cài Đặt" />
+</menu>
