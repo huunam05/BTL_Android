@@ -1,5 +1,6 @@
 package com.example.btl_android.controller;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
@@ -89,13 +90,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 KyHoc kyHoc = listKyHoc.get(position);
-                String message = "Bạn đã chọn: " + kyHoc.getTenKy();
+                String message = "Bạn đã chọn: " + kyHoc.getTenKy() + kyHoc.getId();
                 Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
-
-                // TODO: Chuyển sang màn hình chi tiết kỳ học
-                // Intent intent = new Intent(MainActivity.this, ChiTietKyHocActivity.class);
-                // intent.putExtra("kyHoc", kyHoc);
-                // startActivity(intent);
+                 Intent intent = new Intent(MainActivity.this, ChiTietKyHocActivity.class);
+                 intent.putExtra("kyHoc", kyHoc);
+                 startActivity(intent);
             }
         });
 
@@ -107,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
                 String message = "Long click: " + kyHoc.getTenKy();
                 Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
 
-                // TODO: Hiển thị dialog xóa hoặc chỉnh sửa
+
                 return true;
             }
         });
@@ -117,7 +116,6 @@ public class MainActivity extends AppCompatActivity {
     public void updateListKyHoc(List<KyHoc> newList) {
         this.listKyHoc = newList;
         adapter.updateData(newList);
-
         if (listKyHoc.isEmpty()) {
             lvKyHoc.setVisibility(View.GONE);
             tvEmpty.setVisibility(View.VISIBLE);

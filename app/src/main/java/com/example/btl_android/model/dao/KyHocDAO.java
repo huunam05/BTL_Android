@@ -66,4 +66,6 @@ public class KyHocDAO {
         int result = db.delete("KyHoc", "id = ?", new String[]{String.valueOf(id)});
         return result > 0;
     }
+
+
 }
