@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F5F5F5">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#2196F3"
+        android:padding="16dp">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_revert"
+            app:tint="#FFFFFF"
+            android:layout_centerVertical="true"
+            android:contentDescription="Quay lại" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="CÔNG CỤ HỖ TRỢ"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+    </RelativeLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <Button
+            android:id="@+id/btnTinhDiem"
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="#FFFFFF"
+            android:text="Công cụ tính điểm cần thi"
+            android:textColor="#333333"
+            android:textSize="16sp"
+            android:textAllCaps="false"
+            android:elevation="4dp"
+            android:drawableStart="@android:drawable/ic_menu_compass"
+            android:drawablePadding="16dp"
+            android:paddingStart="24dp"
+            android:gravity="center_vertical|start" />
+
+        <Button
+            android:id="@+id/btnTuVan"
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
+            android:backgroundTint="#FFFFFF"
+            android:text="Tư vấn lộ trình cải thiện điểm"
+            android:textColor="#333333"
+            android:textSize="16sp"
+            android:textAllCaps="false"
+            android:elevation="4dp"
+            android:drawableStart="@android:drawable/ic_menu_help"
+            android:drawablePadding="16dp"
+            android:paddingStart="24dp"
+            android:gravity="center_vertical|start" />
+
+    </LinearLayout>
+
+</LinearLayout>

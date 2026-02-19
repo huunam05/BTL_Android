@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,8 +31,8 @@ public class MainActivity extends AppCompatActivity {
     private KyHocAdapter adapter;
     private List<KyHoc> listKyHoc;
     private SinhVienDAO sinhVienDAO;
-
     private KyHocDAO kyHocDAO;
+    private LinearLayout btnCongCu;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
     private void initViews() {
         lvKyHoc = findViewById(R.id.lvKyHoc);
         tvEmpty = findViewById(R.id.tvEmpty);
+        btnCongCu = findViewById(R.id.btnCongCu);
     }
 
     private void initData() {
@@ -90,11 +92,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 KyHoc kyHoc = listKyHoc.get(position);
-                String message = "Bạn đã chọn: " + kyHoc.getTenKy() + kyHoc.getId();
-                Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
-                 Intent intent = new Intent(MainActivity.this, ChiTietKyHocActivity.class);
-                 intent.putExtra("kyHoc", kyHoc);
-                 startActivity(intent);
+                Intent intent = new Intent(MainActivity.this, ChiTietKyHocActivity.class);
+                intent.putExtra("kyHoc", kyHoc);
+                startActivity(intent);
             }
         });
 
@@ -103,16 +103,22 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                 KyHoc kyHoc = listKyHoc.get(position);
-                String message = "Long click: " + kyHoc.getTenKy();
-                Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
-
-
+                Toast.makeText(MainActivity.this, "Long click: " + kyHoc.getTenKy(), Toast.LENGTH_SHORT).show();
                 return true;
+            }
+        });
+
+        // Sự kiện click vào nút Công cụ
+        btnCongCu.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, CongCuActivity.class);
+                startActivity(intent);
             }
         });
     }
 
-    // Phương thức cập nhật dữ liệu (có thể gọi từ bên ngoài)
+    // Phương thức cập nhật dữ liệu
     public void updateListKyHoc(List<KyHoc> newList) {
         this.listKyHoc = newList;
         adapter.updateData(newList);
