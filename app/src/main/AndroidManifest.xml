@@ -15,6 +15,11 @@
         android:theme="@style/Theme.Btl_Android">
 
         <activity
+            android:name=".controller.LoTrinhHocTapActivity"
+            android:exported="false"
+            android:label="Lộ trình học tập" />
+
+        <activity
             android:name=".controller.LayDuLieuWebViewActivity"
             android:exported="false"
             android:label="Lấy dữ liệu từ HaUI" />

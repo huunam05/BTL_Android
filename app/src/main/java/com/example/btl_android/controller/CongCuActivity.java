@@ -39,13 +39,14 @@ public class CongCuActivity extends AppCompatActivity {
 
     private void setupClickListeners() {
         btnTinhGPA.setOnClickListener(v -> {
-            // TODO: Mở màn hình tính GPA
-            Toast.makeText(CongCuActivity.this, "Chức năng đang được phát triển!", Toast.LENGTH_SHORT).show();
+            // Mở màn hình tính điểm cần thi
+            Intent intent = new Intent(CongCuActivity.this, TinhDiemCanThiActivity.class);
+            startActivity(intent);
         });
 
         btnCaiThienDiem.setOnClickListener(v -> {
-            // Mở màn hình lấy dữ liệu từ WebView
-            Intent intent = new Intent(CongCuActivity.this, LayDuLieuWebViewActivity.class);
+            // Mở màn hình lộ trình học tập thông minh
+            Intent intent = new Intent(CongCuActivity.this, LoTrinhHocTapActivity.class);
             startActivity(intent);
         });
     }

@@ -20,6 +20,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class ChiTietKyHocActivity extends AppCompatActivity {
 
@@ -45,7 +46,6 @@ public class ChiTietKyHocActivity extends AppCompatActivity {
         // Khởi tạo views
         initViews();
 
-
         loadData();
 
         // Hiển thị thông tin kỳ học
@@ -56,6 +56,9 @@ public class ChiTietKyHocActivity extends AppCompatActivity {
 
         // Setup các sự kiện
         setupClickListeners();
+
+        // Tính toán GPA ngay khi load dữ liệu
+        calculateAndUpdateGPA();
     }
 
     private void initViews() {
@@ -72,55 +75,39 @@ public class ChiTietKyHocActivity extends AppCompatActivity {
     }
 
     private void loadData() {
-        // Trong thực tế, lấy từ Intent:
-         kyHoc = (KyHoc) getIntent().getSerializableExtra("kyHoc");
+        // Lấy từ Intent
+        kyHoc = (KyHoc) getIntent().getSerializableExtra("kyHoc");
+        if (kyHoc == null) {
+            finish();
+            return;
+        }
 
-        // Tạo danh sách môn học mẫu
-        listMonHoc = createListMonHoc();
-    }
-
-    private List<MonHoc> createListMonHoc() {
-        List<MonHoc> list = new ArrayList<>();
-        list = monHocDAO.getMonHocByKy(kyHoc.getId());
-
-        return list;
+        // Lấy danh sách môn học từ database
+        listMonHoc = monHocDAO.getMonHocByKy(kyHoc.getId());
     }
 
     private void displayKyHocInfo() {
-        // Hiển thị tên kỳ
         tvTenKy.setText(kyHoc.getTenKy());
 
-        // Hiển thị GPA
-        if (kyHoc.isTrangThai()) {
-            tvGpaKy.setText(String.format("%.2f", kyHoc.getGpaKy()));
-        } else {
-            tvGpaKy.setText("--");
-        }
-
-        // Hiển thị trạng thái
+        // Trạng thái
         if (kyHoc.isTrangThai()) {
             tvTrangThai.setText("Đã hoàn thành");
         } else {
             tvTrangThai.setText("Đang học");
         }
 
-        // Hiển thị tổng tín chỉ
-        tvTongTinChi.setText(String.valueOf(kyHoc.getTongTinChiKy()));
-
-        // Hiển thị số môn học
+        // Số môn học
         tvSoMonHoc.setText(String.valueOf(listMonHoc.size()));
     }
 
     private void setupAdapter() {
         adapter = new MonHocAdapter(this, listMonHoc);
         lvMonHoc.setAdapter(adapter);
-
-        // Hiển thị/ẩn empty view
         updateEmptyView();
     }
 
     private void updateEmptyView() {
-        if (listMonHoc.isEmpty()) {
+        if (listMonHoc == null || listMonHoc.isEmpty()) {
             lvMonHoc.setVisibility(View.GONE);
             layoutEmpty.setVisibility(View.VISIBLE);
         } else {
@@ -130,113 +117,43 @@ public class ChiTietKyHocActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
-        // Nút quay lại
-        btnBack.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
+        btnBack.setOnClickListener(v -> finish());
+
+        btnEdit.setOnClickListener(v -> {
+            Toast.makeText(ChiTietKyHocActivity.this, "Chức năng chỉnh sửa kỳ học", Toast.LENGTH_SHORT).show();
         });
 
-        // Nút chỉnh sửa
-        btnEdit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(ChiTietKyHocActivity.this,
-                        "Chức năng chỉnh sửa kỳ học", Toast.LENGTH_SHORT).show();
-                // TODO: Mở dialog hoặc activity chỉnh sửa
-            }
+        fabAddMonHoc.setOnClickListener(v -> {
+            Toast.makeText(ChiTietKyHocActivity.this, "Thêm môn học mới", Toast.LENGTH_SHORT).show();
         });
 
-        // FAB thêm môn học
-        fabAddMonHoc.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(ChiTietKyHocActivity.this,
-                        "Thêm môn học mới", Toast.LENGTH_SHORT).show();
-                // TODO: Mở activity thêm môn học
-                // Intent intent = new Intent(ChiTietKyHocActivity.this, ThemMonHocActivity.class);
-                // intent.putExtra("kyHocId", kyHoc.getId());
-                // startActivity(intent);
-            }
+        lvMonHoc.setOnItemClickListener((parent, view, position, id) -> {
+            MonHoc monHoc = listMonHoc.get(position);
+            Toast.makeText(ChiTietKyHocActivity.this, "Xem chi tiết: " + monHoc.getTenMon(), Toast.LENGTH_SHORT).show();
         });
 
-        // Click vào item môn học
-        lvMonHoc.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                MonHoc monHoc = listMonHoc.get(position);
-                Toast.makeText(ChiTietKyHocActivity.this,
-                        "Xem chi tiết: " + monHoc.getTenMon(), Toast.LENGTH_SHORT).show();
-                // TODO: Mở activity chi tiết môn học
-            }
-        });
-
-        // Long click vào item môn học
-        lvMonHoc.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                MonHoc monHoc = listMonHoc.get(position);
-                Toast.makeText(ChiTietKyHocActivity.this,
-                        "Long click: " + monHoc.getTenMon(), Toast.LENGTH_SHORT).show();
-                // TODO: Hiển thị dialog xóa/sửa môn học
-                return true;
-            }
-        });
-
-        // Bottom navigation buttons (nếu cần)
         setupBottomNavigation();
     }
 
     private void setupBottomNavigation() {
-        findViewById(R.id.btnTrangChu).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(ChiTietKyHocActivity.this, "Trang chủ", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        findViewById(R.id.btnThongKe).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(ChiTietKyHocActivity.this, "Thống kê", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        findViewById(R.id.btnCongCu).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(ChiTietKyHocActivity.this, "Công cụ", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        findViewById(R.id.btnCaiDat).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(ChiTietKyHocActivity.this, "Cài đặt", Toast.LENGTH_SHORT).show();
-            }
-        });
+        findViewById(R.id.btnTrangChu).setOnClickListener(v -> Toast.makeText(this, "Trang chủ", Toast.LENGTH_SHORT).show());
+        findViewById(R.id.btnThongKe).setOnClickListener(v -> Toast.makeText(this, "Thống kê", Toast.LENGTH_SHORT).show());
+        findViewById(R.id.btnCongCu).setOnClickListener(v -> Toast.makeText(this, "Công cụ", Toast.LENGTH_SHORT).show());
+        findViewById(R.id.btnCaiDat).setOnClickListener(v -> Toast.makeText(this, "Cài đặt", Toast.LENGTH_SHORT).show());
     }
 
-    // Phương thức cập nhật danh sách môn học (gọi sau khi thêm/xóa/sửa)
     public void updateListMonHoc() {
-        // Trong thực tế, lấy lại từ database
-        // listMonHoc = monHocDAO.getMonHocByKy(kyHoc.getId());
-
+        listMonHoc = monHocDAO.getMonHocByKy(kyHoc.getId());
         adapter.updateData(listMonHoc);
         tvSoMonHoc.setText(String.valueOf(listMonHoc.size()));
         updateEmptyView();
-
-        // Tính lại GPA nếu cần
         calculateAndUpdateGPA();
     }
 
     private void calculateAndUpdateGPA() {
-        // TODO: Tính toán lại GPA của kỳ dựa trên các môn học
-        // Công thức: GPA = Tổng(Điểm hệ 4 * Số tín chỉ) / Tổng số tín chỉ
-
-        if (listMonHoc.isEmpty()) {
+        if (listMonHoc == null || listMonHoc.isEmpty()) {
             tvGpaKy.setText("--");
+            tvTongTinChi.setText("0");
             return;
         }
 
@@ -244,7 +161,8 @@ public class ChiTietKyHocActivity extends AppCompatActivity {
         int tongTinChi = 0;
 
         for (MonHoc mon : listMonHoc) {
-            if (mon.getTrangThai().equals("Đã qua") || mon.getTrangThai().equals("Qua môn")) {
+            // Chỉ tính những môn đã có điểm tổng kết (trạng thái khác "Đang học")
+            if (!"Đang học".equals(mon.getTrangThai())) {
                 tongDiemTichLuy += mon.getDiemTongKet4() * mon.getSoTinChi();
                 tongTinChi += mon.getSoTinChi();
             }
@@ -252,13 +170,18 @@ public class ChiTietKyHocActivity extends AppCompatActivity {
 
         if (tongTinChi > 0) {
             float gpa = tongDiemTichLuy / tongTinChi;
-            tvGpaKy.setText(String.format("%.2f", gpa));
+            tvGpaKy.setText(String.format(Locale.getDefault(), "%.2f", gpa));
+            tvTongTinChi.setText(String.valueOf(tongTinChi));
+            
+            // Cập nhật vào object kyHoc
             kyHoc.setGpaKy(gpa);
+            kyHoc.setTongTinChiKy(tongTinChi);
+            
+            // Lưu vào database nếu cần (Giả sử có KyHocDAO)
+            // new KyHocDAO(this).updateKyHoc(kyHoc);
         } else {
             tvGpaKy.setText("--");
+            tvTongTinChi.setText("0");
         }
-
-        tvTongTinChi.setText(String.valueOf(tongTinChi));
-        kyHoc.setTongTinChiKy(tongTinChi);
     }
 }
