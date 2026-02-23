@@ -120,11 +120,11 @@ public class TinhDiemCanThiActivity extends AppCompatActivity {
                 double mucTieuDiem = 0;
                 switch (mucTieuChu) {
                     case "A": mucTieuDiem = 8.5; break;
-                    case "B+": mucTieuDiem = 8.0; break;
+                    case "B+": mucTieuDiem = 7.7; break;
                     case "B": mucTieuDiem = 7.0; break;
-                    case "C+": mucTieuDiem = 6.5; break;
+                    case "C+": mucTieuDiem = 6.2; break;
                     case "C": mucTieuDiem = 5.5; break;
-                    case "D+": mucTieuDiem = 5.0; break;
+                    case "D+": mucTieuDiem = 4.7; break;
                     case "D": mucTieuDiem = 4.0; break;
                 }
 
