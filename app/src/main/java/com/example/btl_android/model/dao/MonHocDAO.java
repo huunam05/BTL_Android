@@ -96,6 +96,14 @@ public class MonHocDAO {
         return result > 0;
     }
 
+    // Phương thức mới: Xóa tất cả môn học của một kỳ
+    public boolean deleteMonHocByKyHocId(int kyHocId) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        int result = db.delete("MonHoc", "ky_hoc_id = ?", new String[]{String.valueOf(kyHocId)});
+        syncGlobalStats(kyHocId);
+        return result > 0;
+    }
+
     private ContentValues getMonHocContentValues(MonHoc mh) {
         ContentValues values = new ContentValues();
         values.put("ky_hoc_id", mh.getKyHocId());
@@ -119,7 +127,6 @@ public class MonHocDAO {
     public void syncGlobalStats(int kyHocId) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         
-        // 1. Cập nhật GPA kỳ học
         Cursor cursorKy = db.rawQuery("SELECT SUM(diem_tong_ket_4 * so_tin_chi), SUM(so_tin_chi) " +
                 "FROM MonHoc WHERE ky_hoc_id = ? AND trang_thai != 'Đang học'", new String[]{String.valueOf(kyHocId)});
         
@@ -136,7 +143,6 @@ public class MonHocDAO {
         valuesKy.put("tong_tin_chi_ky", tongTinKy);
         db.update("KyHoc", valuesKy, "id = ?", new String[]{String.valueOf(kyHocId)});
 
-        // 2. Cập nhật CPA sinh viên (Giả sử mặc định SV ID = 1)
         Cursor cursorSV = db.rawQuery("SELECT SUM(diem_tong_ket_4 * so_tin_chi), SUM(so_tin_chi) " +
                 "FROM MonHoc WHERE trang_thai != 'Đang học'", null);
         
