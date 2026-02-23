@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 
 import com.example.btl_android.model.database.DBHelper;
 import com.example.btl_android.model.entity.MonHoc;
@@ -70,37 +71,12 @@ public class MonHocDAO {
     public long insertMonHoc(MonHoc mh) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         ContentValues values = getMonHocContentValues(mh);
-        long id = db.insert("MonHoc", null, values);
-        if (id > 0) {
-            syncGlobalStats(mh.getKyHocId());
-        }
-        return id;
-    }
-
-    public boolean updateMonHoc(MonHoc mh) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        ContentValues values = getMonHocContentValues(mh);
-        int result = db.update("MonHoc", values, "id = ?", new String[]{String.valueOf(mh.getId())});
-        if (result > 0) {
-            syncGlobalStats(mh.getKyHocId());
-        }
-        return result > 0;
-    }
-
-    public boolean deleteMonHoc(int id, int kyHocId) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        int result = db.delete("MonHoc", "id = ?", new String[]{String.valueOf(id)});
-        if (result > 0) {
-            syncGlobalStats(kyHocId);
-        }
-        return result > 0;
+        return db.insert("MonHoc", null, values);
     }
 
     public boolean deleteMonHocByKyHocId(int kyHocId) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        int result = db.delete("MonHoc", "ky_hoc_id = ?", new String[]{String.valueOf(kyHocId)});
-        syncGlobalStats(kyHocId);
-        return result > 0;
+        return db.delete("MonHoc", "ky_hoc_id = ?", new String[]{String.valueOf(kyHocId)}) > 0;
     }
 
     private ContentValues getMonHocContentValues(MonHoc mh) {
@@ -110,11 +86,8 @@ public class MonHocDAO {
         values.put("so_tin_chi", mh.getSoTinChi());
         values.put("diem_tx1", mh.getDiemTx1());
         values.put("diem_tx2", mh.getDiemTx2());
-        if (mh.getDiemTx3() != null) {
-            values.put("diem_tx3", mh.getDiemTx3());
-        } else {
-            values.putNull("diem_tx3");
-        }
+        if (mh.getDiemTx3() != null) values.put("diem_tx3", mh.getDiemTx3());
+        else values.putNull("diem_tx3");
         values.put("diem_thi", mh.getDiemThi());
         values.put("diem_tong_ket_10", mh.getDiemTongKet10());
         values.put("diem_tong_ket_4", mh.getDiemTongKet4());
@@ -123,45 +96,37 @@ public class MonHocDAO {
         return values;
     }
 
-    public void syncGlobalStats(int kyHocId) {
+    /**
+     * Đồng bộ CPA và Tín chỉ tích lũy (Chuẩn HaUI)
+     */
+    public void syncGlobalStats() {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         
-        // 1. Cập nhật GPA kỳ học (Tính tất cả các môn trong kỳ đó)
-        Cursor cursorKy = db.rawQuery("SELECT SUM(diem_tong_ket_4 * so_tin_chi), SUM(so_tin_chi) " +
-                "FROM MonHoc WHERE ky_hoc_id = ? AND trang_thai != 'Đang học'", new String[]{String.valueOf(kyHocId)});
+        // Công thức chuẩn: Chỉ lấy điểm CAO NHẤT của mỗi môn (xử lý học cải thiện)
+        String query = "SELECT SUM(max_diem4 * so_tin_chi), SUM(so_tin_chi) FROM (" +
+                       "SELECT MAX(diem_tong_ket_4) as max_diem4, so_tin_chi " +
+                       "FROM MonHoc " +
+                       "WHERE diem_chu != '' AND diem_chu IS NOT NULL " +
+                       "GROUP BY ten_mon)";
+                       
+        Cursor cursor = db.rawQuery(query, null);
         
-        float gpaKy = 0;
-        int tongTinKy = 0;
-        if (cursorKy.moveToFirst() && cursorKy.getInt(1) > 0) {
-            gpaKy = cursorKy.getFloat(0) / cursorKy.getInt(1);
-            tongTinKy = cursorKy.getInt(1);
-        }
-        cursorKy.close();
-
-        ContentValues valuesKy = new ContentValues();
-        valuesKy.put("gpa_ky", gpaKy);
-        valuesKy.put("tong_tin_chi_ky", tongTinKy);
-        db.update("KyHoc", valuesKy, "id = ?", new String[]{String.valueOf(kyHocId)});
-
-        // 2. Cập nhật CPA sinh viên (CHỈ lấy điểm cao nhất của mỗi môn để xử lý học lại)
-        // Sử dụng subquery để lọc ra điểm cao nhất cho từng tên môn học
-        String cpaQuery = "SELECT SUM(max_diem4 * stc), SUM(stc) FROM (" +
-                          "SELECT ten_mon, MAX(diem_tong_ket_4) as max_diem4, MAX(so_tin_chi) as stc " +
-                          "FROM MonHoc WHERE trang_thai != 'Đang học' GROUP BY ten_mon" +
-                          ")";
-        Cursor cursorSV = db.rawQuery(cpaQuery, null);
+        float tongDiemTichLuy = 0;
+        int tongTinChi = 0;
         
-        float cpaTong = 0;
-        int tongTinTong = 0;
-        if (cursorSV.moveToFirst() && cursorSV.getInt(1) > 0) {
-            cpaTong = cursorSV.getFloat(0) / cursorSV.getInt(1);
-            tongTinTong = cursorSV.getInt(1);
+        if (cursor.moveToFirst() && cursor.getInt(1) > 0) {
+            tongDiemTichLuy = cursor.getFloat(0);
+            tongTinChi = cursor.getInt(1);
         }
-        cursorSV.close();
+        cursor.close();
 
-        ContentValues valuesSV = new ContentValues();
-        valuesSV.put("cpa_hien_tai", cpaTong);
-        valuesSV.put("tong_tin_chi_tich_luy", tongTinTong);
-        db.update("SinhVien", valuesSV, "id = 1", null);
+        float cpa = tongTinChi > 0 ? tongDiemTichLuy / tongTinChi : 0;
+
+        ContentValues values = new ContentValues();
+        values.put("cpa_hien_tai", cpa);
+        values.put("tong_tin_chi_tich_luy", tongTinChi);
+        
+        db.update("SinhVien", values, "id = 1", null);
+        Log.d("SYNC_STATS", "CPA: " + cpa + " - Tổng tín: " + tongTinChi);
     }
 }

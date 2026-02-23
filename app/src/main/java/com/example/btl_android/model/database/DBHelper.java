@@ -7,7 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DBHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "gpa.db";
-    private static final int DB_VERSION = 2;
+    private static final int DB_VERSION = 3; // Nâng version để xóa DB cũ
 
     public DBHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -16,7 +16,6 @@ public class DBHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
 
-        // ================== BẢNG SINH VIÊN ==================
         String createSinhVien = "CREATE TABLE SinhVien (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "ho_ten TEXT, " +
@@ -28,7 +27,6 @@ public class DBHelper extends SQLiteOpenHelper {
                 ")";
         db.execSQL(createSinhVien);
 
-        // ================== BẢNG KỲ HỌC ==================
         String createKyHoc = "CREATE TABLE KyHoc (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "sinh_vien_id INTEGER, " +
@@ -40,7 +38,6 @@ public class DBHelper extends SQLiteOpenHelper {
                 ")";
         db.execSQL(createKyHoc);
 
-        // ================== BẢNG MÔN HỌC ==================
         String createMonHoc = "CREATE TABLE MonHoc (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "ky_hoc_id INTEGER, " +
@@ -54,11 +51,11 @@ public class DBHelper extends SQLiteOpenHelper {
                 "diem_tong_ket_4 REAL, " +
                 "diem_chu TEXT, " +
                 "trang_thai TEXT, " +
+                "UNIQUE(ten_mon, ky_hoc_id), " + // Tránh trùng lặp môn trong 1 kỳ
                 "FOREIGN KEY(ky_hoc_id) REFERENCES KyHoc(id)" +
                 ")";
         db.execSQL(createMonHoc);
 
-        // ================== BẢNG CẤU HÌNH TRỌNG SỐ ==================
         String createTrongSo = "CREATE TABLE CauHinhTrongSo (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "ten_he_dao_tao TEXT, " +
@@ -69,24 +66,14 @@ public class DBHelper extends SQLiteOpenHelper {
                 ")";
         db.execSQL(createTrongSo);
 
-        // ================== SEED DATA ==================
         seedData(db);
     }
 
     private void seedData(SQLiteDatabase db) {
+        // Tạo sinh viên mặc định
+        db.execSQL("INSERT INTO SinhVien (ho_ten, mssv) VALUES ('Sinh viên HaUI', '202460xxxx')");
 
-        // ---- Sinh viên mẫu ----
-        db.execSQL("INSERT INTO SinhVien (ho_ten, mssv, cpa_hien_tai, tong_tin_chi_tich_luy, muc_tieu_cpa) " +
-                "VALUES ('Đào Xuân Thắng', '2021600001', 3.2, 60, 3.5)");
-
-        // ---- Kỳ học mẫu ----
-        db.execSQL("INSERT INTO KyHoc (sinh_vien_id, ten_ky, gpa_ky, tong_tin_chi_ky, trang_thai) " +
-                "VALUES (1, 'Kỳ 1 - 2024-2025', 3.4, 15, true)");
-
-        db.execSQL("INSERT INTO KyHoc (sinh_vien_id, ten_ky, gpa_ky, tong_tin_chi_ky, trang_thai) " +
-                "VALUES (1, 'Kỳ 2 - 2024-2026', 0, 18, true)");
-
-        // ---- Cấu hình trọng số HaUI ----
+        // Tạo cấu hình trọng số HaUI
         db.execSQL("INSERT INTO CauHinhTrongSo (ten_he_dao_tao, trong_so_tx1, trong_so_tx2, trong_so_tx3, trong_so_thi) " +
                 "VALUES ('chính quy', 0.2, 0.2, 0.2, 0.4)");
     }
