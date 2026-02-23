@@ -96,7 +96,6 @@ public class MonHocDAO {
         return result > 0;
     }
 
-    // Phương thức mới: Xóa tất cả môn học của một kỳ
     public boolean deleteMonHocByKyHocId(int kyHocId) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         int result = db.delete("MonHoc", "ky_hoc_id = ?", new String[]{String.valueOf(kyHocId)});
@@ -127,6 +126,7 @@ public class MonHocDAO {
     public void syncGlobalStats(int kyHocId) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         
+        // 1. Cập nhật GPA kỳ học (Tính tất cả các môn trong kỳ đó)
         Cursor cursorKy = db.rawQuery("SELECT SUM(diem_tong_ket_4 * so_tin_chi), SUM(so_tin_chi) " +
                 "FROM MonHoc WHERE ky_hoc_id = ? AND trang_thai != 'Đang học'", new String[]{String.valueOf(kyHocId)});
         
@@ -143,8 +143,13 @@ public class MonHocDAO {
         valuesKy.put("tong_tin_chi_ky", tongTinKy);
         db.update("KyHoc", valuesKy, "id = ?", new String[]{String.valueOf(kyHocId)});
 
-        Cursor cursorSV = db.rawQuery("SELECT SUM(diem_tong_ket_4 * so_tin_chi), SUM(so_tin_chi) " +
-                "FROM MonHoc WHERE trang_thai != 'Đang học'", null);
+        // 2. Cập nhật CPA sinh viên (CHỈ lấy điểm cao nhất của mỗi môn để xử lý học lại)
+        // Sử dụng subquery để lọc ra điểm cao nhất cho từng tên môn học
+        String cpaQuery = "SELECT SUM(max_diem4 * stc), SUM(stc) FROM (" +
+                          "SELECT ten_mon, MAX(diem_tong_ket_4) as max_diem4, MAX(so_tin_chi) as stc " +
+                          "FROM MonHoc WHERE trang_thai != 'Đang học' GROUP BY ten_mon" +
+                          ")";
+        Cursor cursorSV = db.rawQuery(cpaQuery, null);
         
         float cpaTong = 0;
         int tongTinTong = 0;

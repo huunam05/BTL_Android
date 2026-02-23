@@ -86,16 +86,6 @@ public class DBHelper extends SQLiteOpenHelper {
         db.execSQL("INSERT INTO KyHoc (sinh_vien_id, ten_ky, gpa_ky, tong_tin_chi_ky, trang_thai) " +
                 "VALUES (1, 'Kỳ 2 - 2024-2026', 0, 18, true)");
 
-        // ---- Môn học mẫu ----
-        db.execSQL("INSERT INTO MonHoc (ky_hoc_id, ten_mon, so_tin_chi, diem_tx1, diem_tx2, diem_tx3, diem_thi, diem_tong_ket_10, diem_tong_ket_4, diem_chu, trang_thai) " +
-                "VALUES (1, 'Lập trình Android', 3, 8, 7.5, 8, 8, 8.0, 3.5, 'B+', 'Đã qua')");
-
-        db.execSQL("INSERT INTO MonHoc (ky_hoc_id, ten_mon, so_tin_chi, diem_tx1, diem_tx2, diem_tx3, diem_thi, diem_tong_ket_10, diem_tong_ket_4, diem_chu, trang_thai) " +
-                "VALUES (1, 'Cơ sở dữ liệu', 3, 7, 7, 7.5, 7, 7.2, 3.0, 'B', 'Đã qua')");
-
-        db.execSQL("INSERT INTO MonHoc (ky_hoc_id, ten_mon, so_tin_chi, diem_tx1, diem_tx2, diem_tx3, diem_thi, diem_tong_ket_10, diem_tong_ket_4, diem_chu, trang_thai) " +
-                "VALUES (2, 'Cấu trúc dữ liệu', 3, 0, 0, 0, 0, 0, 0, '', 'Đang học')");
-
         // ---- Cấu hình trọng số HaUI ----
         db.execSQL("INSERT INTO CauHinhTrongSo (ten_he_dao_tao, trong_so_tx1, trong_so_tx2, trong_so_tx3, trong_so_thi) " +
                 "VALUES ('chính quy', 0.2, 0.2, 0.2, 0.4)");

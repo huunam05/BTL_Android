@@ -29,7 +29,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class LayDuLieuWebViewActivity extends AppCompatActivity {
 
@@ -127,8 +129,8 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
                     return;
                 }
 
-                List<MonHoc> monHocList = new ArrayList<>();
-                StringBuilder dataToShow = new StringBuilder();
+                // Sử dụng Map để lọc trùng môn, chỉ giữ lại môn có điểm cao nhất
+                Map<String, MonHoc> distinctMonHocMap = new HashMap<>();
                 int ignoredCount = 0;
 
                 for (int i = 0; i < jsonArray.length(); i++) {
@@ -140,41 +142,63 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
                         continue;
                     }
 
-                    MonHoc mh = new MonHoc();
-                    mh.setTenMon(tenMon);
-                    mh.setSoTinChi((int) parseSafeFloat(obj.getString("soTinChi")));
-                    mh.setDiemThi(parseSafeFloat(obj.getString("diemThi")));
-                    mh.setDiemTongKet10(parseSafeFloat(obj.getString("diemTK10")));
-                    mh.setDiemTongKet4(parseSafeFloat(obj.getString("diemTK4")));
-                    mh.setDiemChu(obj.getString("diemChu"));
-                    mh.setTrangThai("Đã qua");
-                    monHocList.add(mh);
+                    float newDiemTK10 = parseSafeFloat(obj.getString("diemTK10"));
 
-                    dataToShow.append("- ").append(mh.getTenMon()).append(" (").append(mh.getSoTinChi()).append(" TC)\n");
+                    // Logic lọc trùng và giữ điểm cao nhất
+                    if (distinctMonHocMap.containsKey(tenMon)) {
+                        if (newDiemTK10 > distinctMonHocMap.get(tenMon).getDiemTongKet10()) {
+                            distinctMonHocMap.put(tenMon, createMonHocFromObj(obj));
+                        }
+                    } else {
+                        distinctMonHocMap.put(tenMon, createMonHocFromObj(obj));
+                    }
                 }
 
-                String finalSummary = "Đã lấy " + monHocList.size() + " môn học tính lũy.\n" 
-                                    + "(Đã loại bỏ " + ignoredCount + " môn không tính điểm tích lũy)\n\n"
-                                    + dataToShow.toString();
+                List<MonHoc> monHocList = new ArrayList<>(distinctMonHocMap.values());
+                StringBuilder dataToShow = new StringBuilder();
+                for (MonHoc mh : monHocList) {
+                    dataToShow.append("- ").append(mh.getTenMon()).append(" (").append(mh.getSoTinChi()).append(" TC) - Điểm: ").append(mh.getDiemChu()).append("\n");
+                }
+
+                String finalSummary = "Đã lọc và lấy " + monHocList.size() + " môn học tính lũy.\n"
+                        + "(Đã loại bỏ " + ignoredCount + " môn không tính điểm và các lần học lại điểm thấp)\n\n"
+                        + dataToShow.toString();
 
                 runOnUiThread(() -> showConfirmationDialog(monHocList, finalSummary));
 
             } catch (Exception e) {
                 Log.e("SCRAPING_ERROR", "Lỗi xử lý JSON: " + e.getMessage());
+                runOnUiThread(() -> Toast.makeText(LayDuLieuWebViewActivity.this, "Có lỗi xảy ra khi xử lý dữ liệu.", Toast.LENGTH_SHORT).show());
             }
         }
+    }
+
+    private MonHoc createMonHocFromObj(JSONObject obj) throws org.json.JSONException {
+        MonHoc mh = new MonHoc();
+        mh.setTenMon(obj.getString("tenMon"));
+        mh.setSoTinChi((int) parseSafeFloat(obj.getString("soTinChi")));
+        mh.setDiemThi(parseSafeFloat(obj.getString("diemThi")));
+        mh.setDiemTongKet10(parseSafeFloat(obj.getString("diemTK10")));
+        mh.setDiemTongKet4(parseSafeFloat(obj.getString("diemTK4")));
+        mh.setDiemChu(obj.getString("diemChu"));
+        mh.setTrangThai("Đã qua");
+        return mh;
     }
 
     private boolean isIgnoredSubject(String tenMon) {
         String name = tenMon.toLowerCase();
 
+        // Môn này có nhiều tên biến thể (cơ bản, nâng cao) và thường không tính vào tín chỉ tích luỹ chính thức ở HaUI
+        if (name.contains("kỹ năng sử dụng công nghệ thông tin")) {
+            return true;
+        }
         if (name.contains("tiếng anh") && name.contains("cơ bản")) {
             return true;
         }
 
         String[] ignoredKeywords = {
             "đường lối qp&an", "quân sự chung", "kỹ thuật chiến đấu bộ binh", "công tác quốc phòng", "an ninh",
-            "aerobic", "bơi", "bóng bàn", "bóng chuyền", "bóng đá", "bóng ném", "bóng rổ", 
+            "aerobic", "bơi", "bóng bàn", "bóng chuyền", "bóng đá", "bóng ném", "bóng rổ",
             "cầu lông", "cầu mây", "đá cầu", "futsal", "karate", "khiêu vũ", "pencak silat", "tennis", "thể dục"
         };
 
@@ -183,7 +207,7 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -209,7 +233,8 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
 
     private void saveDataToDatabase(List<MonHoc> monHocList) {
         int targetKyHocId = getOrCreateWebKyHoc();
-        
+
+        // Xóa sạch dữ liệu cũ trong kỳ "Dữ liệu từ Website" để làm mới
         monHocDAO.deleteMonHocByKyHocId(targetKyHocId);
 
         int count = 0;
