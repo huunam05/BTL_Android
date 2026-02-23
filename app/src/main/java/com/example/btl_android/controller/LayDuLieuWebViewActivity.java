@@ -85,7 +85,7 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
         wvLaydiem.addJavascriptInterface(new WebDataInterface(), "AndroidBridge");
 
         // Tự động mở trang web của trường
-        wvLaydiem.loadUrl("https://sv.haui.edu.vn/student/result/examresult");
+        wvLaydiem.loadUrl("https://sv.haui.edu.vn");
     }
 
     private void runScrapingScript() {
