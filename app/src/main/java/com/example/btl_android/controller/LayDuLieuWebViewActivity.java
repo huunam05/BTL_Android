@@ -1,6 +1,5 @@
 package com.example.btl_android.controller;
 
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -29,7 +28,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class LayDuLieuWebViewActivity extends AppCompatActivity {
 
@@ -129,8 +130,8 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
                     return;
                 }
 
-                List<MonHoc> monHocList = new ArrayList<>();
-                StringBuilder dataToShow = new StringBuilder();
+                // Sử dụng Map để lọc trùng môn, chỉ giữ lại môn có điểm cao nhất
+                Map<String, MonHoc> distinctMonHocMap = new HashMap<>();
                 int ignoredCount = 0;
 
                 for (int i = 0; i < jsonArray.length(); i++) {
@@ -138,27 +139,41 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
                     String maHP = obj.getString("maHP");
                     String tenMon = obj.getString("tenMon");
 
-                    // BỘ LỌC CẢI TIẾN: Sử dụng mã HP (Mã chuẩn HaUI)
+                    // BỘ LỌC: Loại bỏ môn Quân sự/Thể chất/TA cơ bản/Kỹ năng CNTT
                     if (isIgnoredSubject(maHP, tenMon)) {
                         ignoredCount++;
                         continue;
                     }
 
+                    float diemTK10 = parseSafeFloat(obj.getString("diemTK10"));
+
                     MonHoc mh = new MonHoc();
                     mh.setTenMon(tenMon);
                     mh.setSoTinChi((int) parseSafeFloat(obj.getString("soTinChi")));
                     mh.setDiemThi(parseSafeFloat(obj.getString("diemThi")));
-                    mh.setDiemTongKet10(parseSafeFloat(obj.getString("diemTK10")));
+                    mh.setDiemTongKet10(diemTK10);
                     mh.setDiemTongKet4(parseSafeFloat(obj.getString("diemTK4")));
                     mh.setDiemChu(obj.getString("diemChu"));
                     mh.setTrangThai("Đã qua");
-                    monHocList.add(mh);
 
-                    dataToShow.append("- ").append(mh.getTenMon()).append(" (").append(mh.getSoTinChi()).append(" TC)\n");
+                    // Kiểm tra trùng môn: chỉ lấy điểm cao nhất
+                    if (distinctMonHocMap.containsKey(tenMon)) {
+                        if (diemTK10 > distinctMonHocMap.get(tenMon).getDiemTongKet10()) {
+                            distinctMonHocMap.put(tenMon, mh);
+                        }
+                    } else {
+                        distinctMonHocMap.put(tenMon, mh);
+                    }
                 }
 
-                String finalSummary = "Đã lấy " + monHocList.size() + " môn tính lũy.\n" 
-                                    + "(Đã loại bỏ " + ignoredCount + " môn Quân sự/Thể chất/TA cơ bản)\n\n"
+                List<MonHoc> monHocList = new ArrayList<>(distinctMonHocMap.values());
+                StringBuilder dataToShow = new StringBuilder();
+                for (MonHoc mh : monHocList) {
+                    dataToShow.append("- ").append(mh.getTenMon()).append(" (").append(mh.getSoTinChi()).append(" TC) - ").append(mh.getDiemChu()).append("\n");
+                }
+
+                String finalSummary = "Đã lấy " + monHocList.size() + " môn tích lũy (đã lọc trùng).\n" 
+                                    + "(Đã loại bỏ " + ignoredCount + " môn không tính tích lũy)\n\n"
                                     + dataToShow.toString();
 
                 runOnUiThread(() -> showConfirmationDialog(monHocList, finalSummary));
@@ -173,14 +188,16 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
         String code = maHP.toUpperCase();
         String name = tenMon.toLowerCase();
 
-        // 1. Lọc theo mã học phần (Chuẩn nhất HaUI)
-        // DC: Quốc phòng, PE: Thể chất
+        // 1. Loại bỏ môn theo yêu cầu đặc biệt
+        if (name.contains("kỹ năng sử dụng công nghệ thông tin")) return true;
+
+        // 2. Lọc theo mã học phần (Chuẩn HaUI)
         if (code.startsWith("DC") || code.startsWith("PE")) return true;
 
-        // 2. Lọc Tiếng Anh cơ bản
+        // 3. Lọc Tiếng Anh cơ bản
         if (name.contains("tiếng anh") && name.contains("cơ bản")) return true;
 
-        // 3. Lọc theo từ khóa dự phòng
+        // 4. Lọc theo từ khóa dự phòng
         String[] ignoredKeywords = {
             "qp&an", "quân sự", "thể dục", "bóng", "bơi", "cầu lông", "đá cầu"
         };
