@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
     private List<KyHoc> listKyHoc;
     private SinhVienDAO sinhVienDAO;
     private KyHocDAO kyHocDAO;
-    private LinearLayout btnCongCu;
+    private LinearLayout btnTrangChu, btnThongKe, btnCongCu, btnCaiDat;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +63,9 @@ public class MainActivity extends AppCompatActivity {
         lvKyHoc = findViewById(R.id.lvKyHoc);
         tvEmpty = findViewById(R.id.tvEmpty);
         btnCongCu = findViewById(R.id.btnCongCu);
+        btnThongKe = findViewById(R.id.btnThongKe);
+        btnCongCu = findViewById(R.id.btnCongCu);
+        btnCaiDat = findViewById(R.id.btnCaiDat);
     }
 
     private void initData() {
@@ -115,6 +118,12 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(MainActivity.this, CongCuActivity.class);
                 startActivity(intent);
             }
+        });
+
+        // Thống kê
+        btnThongKe.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, ThongKe.class);
+            startActivity(intent);
         });
     }
 
