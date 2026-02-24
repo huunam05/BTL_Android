@@ -94,6 +94,7 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
     }
 
     private void runScrapingScript() {
+        // Script cải tiến: Lấy cả môn chưa có điểm (diemTK10 rỗng hoặc '-')
         String script = "javascript:(function() { " +
                 "   var rows = document.querySelectorAll('tr.kTableRow, tr.kTableAltRow'); " +
                 "   var data = []; " +
@@ -109,7 +110,7 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
                 "               diemTK4: cols[12].innerText.trim(), " +
                 "               diemChu: cols[13].innerText.trim() " +
                 "           }; " +
-                "           if (item.tenMon !== '' && item.diemTK10 !== '' && !isNaN(parseFloat(item.soTinChi))) { " +
+                "           if (item.tenMon !== '' && !isNaN(parseFloat(item.soTinChi))) { " +
                 "               data.push(item); " +
                 "           } " +
                 "       } " +
@@ -126,11 +127,11 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
                 JSONArray jsonArray = new JSONArray(jsonData);
                 if (jsonArray.length() == 0) {
                     runOnUiThread(() -> Toast.makeText(LayDuLieuWebViewActivity.this,
-                            "Không tìm thấy dữ liệu tích lũy.", Toast.LENGTH_LONG).show());
+                            "Không tìm thấy dữ liệu trên bảng điểm.", Toast.LENGTH_LONG).show());
                     return;
                 }
 
-                // Sử dụng Map để lọc trùng môn, chỉ giữ lại môn có điểm cao nhất
+                // Sử dụng Map để lọc trùng môn, ưu tiên môn có điểm cao nhất hoặc môn mới nhất (chưa thi)
                 Map<String, MonHoc> distinctMonHocMap = new HashMap<>();
                 int ignoredCount = 0;
 
@@ -145,18 +146,29 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
                         continue;
                     }
 
-                    float diemTK10 = parseSafeFloat(obj.getString("diemTK10"));
+                    String rawDiemTK10 = obj.getString("diemTK10");
+                    float diemTK10 = parseSafeFloat(rawDiemTK10);
+                    float diemThi = parseSafeFloat(obj.getString("diemThi"));
 
                     MonHoc mh = new MonHoc();
                     mh.setTenMon(tenMon);
                     mh.setSoTinChi((int) parseSafeFloat(obj.getString("soTinChi")));
-                    mh.setDiemThi(parseSafeFloat(obj.getString("diemThi")));
+                    mh.setDiemThi(diemThi);
                     mh.setDiemTongKet10(diemTK10);
                     mh.setDiemTongKet4(parseSafeFloat(obj.getString("diemTK4")));
                     mh.setDiemChu(obj.getString("diemChu"));
-                    mh.setTrangThai("Đã qua");
+                    
+                    // Xác định trạng thái dựa trên việc có điểm thi hay chưa
+                    if (diemThi <= 0 && (rawDiemTK10.isEmpty() || rawDiemTK10.equals("-"))) {
+                        mh.setTrangThai("Đang học");
+                    } else {
+                        mh.setTrangThai("Đã qua");
+                    }
 
-                    // Kiểm tra trùng môn: chỉ lấy điểm cao nhất
+                    // Kiểm tra trùng môn: 
+                    // 1. Nếu chưa có môn này trong map -> thêm vào.
+                    // 2. Nếu đã có, chỉ ghi đè nếu môn mới có điểm cao hơn.
+                    // 3. Nếu cả hai đều chưa có điểm, giữ lại môn hiện tại (hoặc môn sau cùng).
                     if (distinctMonHocMap.containsKey(tenMon)) {
                         if (diemTK10 > distinctMonHocMap.get(tenMon).getDiemTongKet10()) {
                             distinctMonHocMap.put(tenMon, mh);
@@ -167,12 +179,17 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
                 }
 
                 List<MonHoc> monHocList = new ArrayList<>(distinctMonHocMap.values());
+                int countChuaThi = 0;
                 StringBuilder dataToShow = new StringBuilder();
                 for (MonHoc mh : monHocList) {
-                    dataToShow.append("- ").append(mh.getTenMon()).append(" (").append(mh.getSoTinChi()).append(" TC) - ").append(mh.getDiemChu()).append("\n");
+                    String status = mh.getDiemChu().isEmpty() || mh.getDiemChu().equals("-") ? "[CHƯA THI]" : "(" + mh.getDiemChu() + ")";
+                    if (status.equals("[CHƯA THI]")) countChuaThi++;
+                    dataToShow.append("- ").append(mh.getTenMon()).append(" ").append(status).append("\n");
                 }
 
-                String finalSummary = "Đã lấy " + monHocList.size() + " môn tích lũy (đã lọc trùng).\n" 
+                String finalSummary = "Tổng cộng: " + monHocList.size() + " môn học.\n" 
+                                    + "- " + (monHocList.size() - countChuaThi) + " môn đã có điểm.\n"
+                                    + "- " + countChuaThi + " môn chưa có điểm thi.\n"
                                     + "(Đã loại bỏ " + ignoredCount + " môn không tính tích lũy)\n\n"
                                     + dataToShow.toString();
 
@@ -217,9 +234,9 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
         scrollView.addView(textView);
 
         new AlertDialog.Builder(this)
-                .setTitle("Kiểm tra dữ liệu tích lũy")
+                .setTitle("Xác nhận dữ liệu học tập")
                 .setView(scrollView)
-                .setPositiveButton("Xác nhận Lưu", (dialog, which) -> {
+                .setPositiveButton("Lưu vào máy", (dialog, which) -> {
                     saveDataToDatabase(monHocList);
                 })
                 .setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss())
@@ -235,7 +252,7 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
             mh.setKyHocId(targetKyHocId);
             if (monHocDAO.insertMonHoc(mh) > 0) count++;
         }
-        Toast.makeText(this, "Đã cập nhật " + count + " môn tích lũy!", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Đã lưu " + count + " môn học thành công!", Toast.LENGTH_LONG).show();
         finish();
     }
 

@@ -66,15 +66,22 @@ public class TinhDiemCanThiActivity extends AppCompatActivity {
         monHocDAO = new MonHocDAO(this);
         cauHinhTrongSoDAO = new CauHinhTrongSoDAO(this);
 
-        // 1. Lấy danh sách môn học cho Spinner
-        monHocList = monHocDAO.getAllMonHoc();
+        // 1. Lấy danh sách môn học cho Spinner - Lọc chỉ hiện các môn chưa có điểm thi
+        List<MonHoc> allMonHoc = monHocDAO.getAllMonHoc();
+        monHocList = new ArrayList<>();
         List<String> tenMonHocList = new ArrayList<>();
-        for (MonHoc mh : monHocList) {
-            tenMonHocList.add(mh.getTenMon());
+        
+        for (MonHoc mh : allMonHoc) {
+            // Lọc môn chưa thi: Không có điểm chữ HOẶC điểm thi = 0 HOẶC trạng thái "Đang học"
+            boolean chuaCoDiemChu = (mh.getDiemChu() == null || mh.getDiemChu().trim().isEmpty() || mh.getDiemChu().equals("-"));
+            if (chuaCoDiemChu || mh.getDiemThi() <= 0) {
+                monHocList.add(mh);
+                tenMonHocList.add(mh.getTenMon());
+            }
         }
         
         if (tenMonHocList.isEmpty()) {
-            tenMonHocList.add("Chưa có môn học nào");
+            tenMonHocList.add("Không có môn nào cần tính điểm thi");
         }
 
         ArrayAdapter<String> monHocAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, tenMonHocList);
@@ -84,11 +91,10 @@ public class TinhDiemCanThiActivity extends AppCompatActivity {
         // 2. Lấy trọng số từ DB
         trongSo = cauHinhTrongSoDAO.getCauHinh();
         if (trongSo == null) {
-            // Mặc định HaUI: 0.2 - 0.2 - 0.2 - 0.4
             trongSo = new CauHinhTrongSo(1, "chính quy", 0.2f, 0.2f, 0.2f, 0.4f);
         }
 
-        // 3. Setup Spinner mục tiêu điểm (Dùng LinkedHashMap để giữ thứ tự)
+        // 3. Setup Spinner mục tiêu điểm
         mucTieuMap = new LinkedHashMap<>();
         mucTieuMap.put("A (>= 8.5)", 8.5f);
         mucTieuMap.put("B+ (>= 7.8)", 7.8f);
@@ -106,16 +112,21 @@ public class TinhDiemCanThiActivity extends AppCompatActivity {
     private void setupListeners() {
         btnBack.setOnClickListener(v -> finish());
 
-        // Tự động điền điểm nếu chọn môn đã có điểm thành phần
         spnMonHoc.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (monHocList != null && position < monHocList.size()) {
                     MonHoc selected = monHocList.get(position);
+                    // Điền điểm thành phần nếu đã có (để người dùng đỡ phải nhập lại)
                     if (selected.getDiemTx1() > 0) edtTx1.setText(String.valueOf(selected.getDiemTx1()));
+                    else edtTx1.setText("");
+
                     if (selected.getDiemTx2() > 0) edtTx2.setText(String.valueOf(selected.getDiemTx2()));
+                    else edtTx2.setText("");
+
                     if (selected.getDiemTx3() != null && selected.getDiemTx3() > 0) 
                         edtTx3.setText(String.valueOf(selected.getDiemTx3()));
+                    else edtTx3.setText("");
                 }
             }
             @Override
@@ -126,6 +137,11 @@ public class TinhDiemCanThiActivity extends AppCompatActivity {
     }
 
     private void tinhToanDiem() {
+        if (monHocList == null || monHocList.isEmpty()) {
+            Toast.makeText(this, "Không có môn học để tính toán", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         try {
             float tx1 = parseScore(edtTx1.getText().toString());
             float tx2 = parseScore(edtTx2.getText().toString());
@@ -136,7 +152,6 @@ public class TinhDiemCanThiActivity extends AppCompatActivity {
             String mucTieuChon = spnMucTieu.getSelectedItem().toString();
             float diemMucTieu = mucTieuMap.get(mucTieuChon);
 
-            // LOGIC TRỌNG SỐ:
             float w1 = trongSo.getTrongSoTx1();
             float w2 = trongSo.getTrongSoTx2();
             float w3 = trongSo.getTrongSoTx3();
@@ -146,18 +161,13 @@ public class TinhDiemCanThiActivity extends AppCompatActivity {
             float trongSoThiThucTe = wThi;
 
             if (tx3 != null) {
-                // Trường hợp có 3 điểm thành phần
                 diemThanhPhanHienTai = (tx1 * w1) + (tx2 * w2) + (tx3 * w3);
             } else {
-                // Trường hợp chỉ có 2 điểm thành phần (TX3 trống)
-                // Theo quy tắc HaUI: Trọng số TX3 được dồn vào điểm thi
                 diemThanhPhanHienTai = (tx1 * w1) + (tx2 * w2);
                 trongSoThiThucTe = wThi + w3; 
             }
 
-            // Công thức: (Mục tiêu - Điểm TP) / Trọng số thi
             float diemCanThi = (diemMucTieu - diemThanhPhanHienTai) / trongSoThiThucTe;
-
             hienThiKetQua(diemCanThi, mucTieuChon);
 
         } catch (Exception e) {
@@ -166,6 +176,7 @@ public class TinhDiemCanThiActivity extends AppCompatActivity {
     }
 
     private float parseScore(String val) {
+        if (val.isEmpty()) return 0;
         float s = Float.parseFloat(val);
         if (s < 0 || s > 10) throw new NumberFormatException();
         return s;

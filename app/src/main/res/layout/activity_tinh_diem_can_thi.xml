@@ -55,6 +55,15 @@
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
                 android:background="@android:drawable/btn_dropdown"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="*Lưu ý: sinh viên chỉ có thể chọn môn chưa thi để tính điểm cần thi sau khi đã lấy dữ liệu từ website về"
+                android:textSize="12sp"
+                android:textColor="#FF6F00"
+                android:textStyle="italic"
                 android:layout_marginBottom="16dp"/>
 
             <TextView
