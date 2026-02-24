@@ -5,7 +5,11 @@
       <list>
         <ColumnSorterState>
           <option name="column" value="Name" />
+<<<<<<< HEAD
           <option name="order" value="ASCENDING" />
+=======
+          <option name="order" value="DESCENDING" />
+>>>>>>> a19233fc53ade11f72a46cf49401942c84a74c73
         </ColumnSorterState>
       </list>
     </option>

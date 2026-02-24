@@ -10,43 +10,45 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:layout_above="@+id/bottom_navigation_container"> <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:orientation="horizontal"
-        android:background="#2196F3"
-        android:gravity="center_vertical"
-        android:elevation="4dp">
+        android:layout_above="@+id/nav_container_detail"> 
+        
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:background="#2196F3"
+            android:gravity="center_vertical"
+            android:elevation="4dp">
 
-        <ImageButton
-            android:id="@+id/btnBack"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_revert"
-            app:tint="#FFFFFF"
-            android:contentDescription="Quay lại"/>
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_revert"
+                app:tint="#FFFFFF"
+                android:contentDescription="Quay lại"/>
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Chi tiết kỳ học"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF"
-            android:layout_marginStart="8dp"/>
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Chi tiết kỳ học"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:layout_marginStart="8dp"/>
 
-        <ImageButton
-            android:id="@+id/btnEdit"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_edit"
-            app:tint="#FFFFFF"
-            android:layout_marginEnd="8dp"
-            android:contentDescription="Chỉnh sửa"/>
-    </LinearLayout>
+            <ImageButton
+                android:id="@+id/btnEdit"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_edit"
+                app:tint="#FFFFFF"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="Chỉnh sửa"/>
+        </LinearLayout>
 
         <ScrollView
             android:layout_width="match_parent"
@@ -234,11 +236,6 @@
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:textColor="#333333"/>
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@android:drawable/ic_menu_sort_by_size"
-                        app:tint="#666666"/>
                 </LinearLayout>
 
                 <ListView
@@ -247,7 +244,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="16dp"
                     android:layout_marginRight="16dp"
-                    android:layout_marginBottom="80dp"
+                    android:layout_marginBottom="16dp"
                     android:divider="@android:color/transparent"
                     android:dividerHeight="8dp"
                     android:background="@android:color/transparent"/>
@@ -272,13 +269,6 @@
                         android:textSize="16sp"
                         android:textColor="#999999"
                         android:layout_marginTop="16dp"/>
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Nhấn nút + để thêm môn học"
-                        android:textSize="14sp"
-                        android:textColor="#BBBBBB"
-                        android:layout_marginTop="8dp"/>
                 </LinearLayout>
 
             </LinearLayout>
@@ -286,101 +276,11 @@
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/bottom_navigation_container"
+        android:id="@+id/nav_container_detail"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:orientation="horizontal"
-        android:background="#FFFFFF"
-        android:elevation="8dp"
-        android:gravity="center"
-        android:layout_alignParentBottom="true"> <LinearLayout
-        android:id="@+id/btnTrangChu"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:background="?attr/selectableItemBackgroundBorderless">
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@android:drawable/ic_menu_view"
-            app:tint="#666666"/>
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Trang chủ"
-            android:textSize="11sp"
-            android:textColor="#666666"
-            android:layout_marginTop="4dp"/>
-    </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/btnThongKe"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:background="?attr/selectableItemBackgroundBorderless">
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_agenda"
-                app:tint="#666666"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Thống kê"
-                android:textSize="11sp"
-                android:textColor="#666666"
-                android:layout_marginTop="4dp"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/btnCongCu"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:background="?attr/selectableItemBackgroundBorderless">
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_manage"
-                app:tint="#2196F3"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Công cụ"
-                android:textSize="11sp"
-                android:textColor="#2196F3"
-                android:layout_marginTop="4dp"
-                android:textStyle="bold"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/btnCaiDat"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:background="?attr/selectableItemBackgroundBorderless">
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_preferences"
-                app:tint="#666666"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Cài đặt"
-                android:textSize="11sp"
-                android:textColor="#666666"
-                android:layout_marginTop="4dp"/>
-        </LinearLayout>
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true">
+        <include layout="@layout/layout_bottom_nav" />
     </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -388,14 +288,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
-        android:layout_above="@id/bottom_navigation_container"
-        android:layout_marginBottom="16dp"
-        android:layout_marginEnd="16dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="84dp"
         android:src="@android:drawable/ic_input_add"
         app:tint="#FFFFFF"
         app:backgroundTint="#4CAF50"
         app:borderWidth="0dp"
-        app:elevation="6dp"
+        app:elevation="10dp"
         android:contentDescription="Thêm môn học"/>
 
 </RelativeLayout>

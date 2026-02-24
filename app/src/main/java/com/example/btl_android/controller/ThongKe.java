@@ -1,218 +1,144 @@
 package com.example.btl_android.controller;
 
-import android.content.Intent;
-import android.os.Bundle;
-
-import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.github.mikephil.charting.charts.LineChart;
+import com.example.btl_android.R;
+import com.example.btl_android.model.dao.KyHocDAO;
+import com.example.btl_android.model.dao.MonHocDAO;
+import com.example.btl_android.model.dao.SinhVienDAO;
+import com.example.btl_android.model.entity.KyHoc;
+import com.example.btl_android.model.entity.MonHoc;
+import com.example.btl_android.model.entity.SinhVien;
 import com.github.mikephil.charting.charts.BarChart;
-
-import com.github.mikephil.charting.data.*;
-import com.github.mikephil.charting.components.*;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
-import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.github.mikephil.charting.utils.ColorTemplate;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
-
-import com.example.btl_android.R;
+import java.util.Map;
 
 public class ThongKe extends AppCompatActivity {
 
-    private LineChart lineChart;
-    private BarChart barChart;
-
-    private LinearLayout btnTrangChu, btnThongKe, btnCongCu, btnCaiDat;
+    private BarChart barChartGrades, barChartTinChi;
     private ImageButton btnBack;
+    
+    private KyHocDAO kyHocDAO;
+    private SinhVienDAO sinhVienDAO;
+    private MonHocDAO monHocDAO;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_thong_ke);
 
-        lineChart = findViewById(R.id.lineChartGPA);
-        barChart = findViewById(R.id.barChartGrade);
-        setupLineChart();
-        setupBarChart();
-        LinearLayout btnTrangChu = findViewById(R.id.btnTrangChu);
-        LinearLayout btnThongKe = findViewById(R.id.btnThongKe);
-        LinearLayout btnCongCu = findViewById(R.id.btnCongCu);
-        LinearLayout btnCaiDat = findViewById(R.id.btnCaiDat);
+        kyHocDAO = new KyHocDAO(this);
+        sinhVienDAO = new SinhVienDAO(this);
+        monHocDAO = new MonHocDAO(this);
 
-        btnTrangChu.setOnClickListener(v -> {
-            startActivity(new Intent(ThongKe.this, MainActivity.class));
-            finish();
-        });
-
-        btnCongCu.setOnClickListener(v -> {
-            startActivity(new Intent(ThongKe.this, CongCuActivity.class));
-            finish();
-        });
-
-        btnCaiDat.setOnClickListener(v -> {
-
-            finish();
-        });
-        ImageButton btnBack = findViewById(R.id.btnBack);
-
-        btnBack.setOnClickListener(v -> {
-            finish();
-        });
+        initViews();
+        loadDataAndDrawCharts();
     }
-    private void setupLineChart() {
 
-        List<Entry> entries = new ArrayList<>();
+    private void initViews() {
+        barChartGrades = findViewById(R.id.barChartGrades);
+        barChartTinChi = findViewById(R.id.barChartTinChi);
+        btnBack = findViewById(R.id.btnBack);
 
-        // Dữ liệu từ comment XML
-        entries.add(new Entry(0, 3.0f));
-        entries.add(new Entry(1, 3.4f));
-        entries.add(new Entry(2, 0f));
-        entries.add(new Entry(3, 0f));
-        entries.add(new Entry(4, 0f));
-        entries.add(new Entry(5, 0f));
-        entries.add(new Entry(6, 0f));
-        entries.add(new Entry(7, 0f));
+        btnBack.setOnClickListener(v -> finish());
+    }
 
-        LineDataSet dataSet = new LineDataSet(entries, "GPA");
-        dataSet.setColor(Color.parseColor("#1E88E5"));
-        dataSet.setCircleColor(Color.parseColor("#1E88E5"));
-        dataSet.setCircleRadius(5f);
-        dataSet.setLineWidth(2f);
-        dataSet.setValueTextSize(12f);
-        dataSet.setDrawValues(true);
+    private void loadDataAndDrawCharts() {
+        monHocDAO.syncGlobalStats();
+        SinhVien sv = sinhVienDAO.getSinhVien();
+        if (sv == null) return;
 
-        // Ẩn giá trị nếu = 0
-        dataSet.setValueFormatter(new ValueFormatter() {
-            @Override
-            public String getPointLabel(Entry entry) {
-                if (entry.getY() == 0f) return "";
-                return String.valueOf(entry.getY());
+        // 1. Thống kê phân bố điểm chữ (A, B, C...)
+        drawGradeDistributionChart();
+
+        // 2. Thống kê tín chỉ theo kỳ
+        drawTinChiBySemesterChart(sv.getId());
+    }
+
+    private void drawGradeDistributionChart() {
+        List<MonHoc> allMonHoc = monHocDAO.getAllMonHoc();
+        Map<String, Integer> gradeCount = new HashMap<>();
+        String[] grades = {"A", "B+", "B", "C+", "C", "D+", "D", "F"};
+        for (String g : grades) gradeCount.put(g, 0);
+
+        for (MonHoc mh : allMonHoc) {
+            String g = mh.getDiemChu();
+            if (g != null) {
+                g = g.trim();
+                if (gradeCount.containsKey(g)) {
+                    gradeCount.put(g, gradeCount.get(g) + 1);
+                }
             }
-        });
-
-        LineData lineData = new LineData(dataSet);
-        lineChart.setData(lineData);
-
-        // Trục Y
-        YAxis yAxis = lineChart.getAxisLeft();
-        yAxis.setAxisMinimum(0f );
-        yAxis.setAxisMaximum(4f);
-        yAxis.setGranularity(0.5f);
-        lineChart.getAxisRight().setEnabled(false);
-
-        // Trục X
-        String[] labels = {"K1","K2","K3","K4","K5","K6","K7","K8"};
-        XAxis xAxis = lineChart.getXAxis();
-        xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
-        xAxis.setGranularity(1f);
-        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setDrawGridLines(true);
-
-        lineChart.getDescription().setEnabled(false);
-        lineChart.getLegend().setEnabled(false);
-        lineChart.animateY(1000);
-        lineChart.invalidate();
-    }
-
-
-    // ===============================
-    // BAR CHART - PHÂN BỐ ĐIỂM
-    // ===============================
-    private void setupBarChart() {
-
-        // Demo data từ comment XML
-        float[] gradeCounts = {0,1,1,2,3,4,2,1};
+        }
 
         List<BarEntry> entries = new ArrayList<>();
-
-        for (int i = 0; i < gradeCounts.length; i++) {
-            entries.add(new BarEntry(i, gradeCounts[i]));
+        for (int i = 0; i < grades.length; i++) {
+            entries.add(new BarEntry(i, gradeCount.get(grades[i])));
         }
 
-        BarDataSet dataSet = new BarDataSet(entries, "Số môn");
-        dataSet.setColor(Color.parseColor("#1E88E5"));
+        BarDataSet dataSet = new BarDataSet(entries, "Số lượng môn học");
+        dataSet.setColors(ColorTemplate.COLORFUL_COLORS);
         dataSet.setValueTextSize(12f);
 
-        // 🔥 Chỉ hiển thị số nguyên trên cột
-        dataSet.setValueFormatter(new ValueFormatter() {
-            @Override
-            public String getBarLabel(BarEntry barEntry) {
-                return String.valueOf((int) barEntry.getY());
-            }
-        });
+        BarData data = new BarData(dataSet);
+        barChartGrades.setData(data);
 
-        BarData barData = new BarData(dataSet);
-        barData.setBarWidth(0.6f);
-
-        barChart.setData(barData);
-
-        // ======================
-        // TRỤC X
-        // ======================
-        String[] gradeLabels = {"F","D","D+","C","C+","B","B+","A"};
-        XAxis xAxis = barChart.getXAxis();
-        xAxis.setValueFormatter(new IndexAxisValueFormatter(gradeLabels));
-        xAxis.setGranularity(1f);
+        XAxis xAxis = barChartGrades.getXAxis();
+        xAxis.setValueFormatter(new IndexAxisValueFormatter(grades));
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setGranularity(1f);
         xAxis.setDrawGridLines(false);
+        
+        barChartGrades.getDescription().setEnabled(false);
+        barChartGrades.getLegend().setEnabled(false);
+        barChartGrades.animateY(1000);
+        barChartGrades.invalidate();
+    }
 
-        // ======================
-        // TRỤC Y (QUAN TRỌNG)
-        // ======================
-        YAxis yAxis = barChart.getAxisLeft();
-        yAxis.setGranularity(1f);          // mỗi bước = 1
-        yAxis.setGranularityEnabled(true);
-        yAxis.setAxisMinimum(0f);          // bắt đầu từ 0
-            // số bậc hiển thị
+    private void drawTinChiBySemesterChart(int sinhVienId) {
+        List<KyHoc> listAll = kyHocDAO.getAllKyHoc(sinhVienId);
+        List<BarEntry> entries = new ArrayList<>();
+        List<String> labels = new ArrayList<>();
 
-
-// 🔥 Tìm giá trị lớn nhất
-        float max = 0f;
-        for (float value : gradeCounts) {
-            if (value > max) max = value;
+        // Vẽ từ kỳ cũ đến kỳ mới
+        int index = 0;
+        for (int i = listAll.size() - 1; i >= 0; i--) {
+            KyHoc kh = listAll.get(i);
+            entries.add(new BarEntry(index, kh.getTongTinChiKy()));
+            labels.add(kh.getTenKy());
+            index++;
         }
 
-// Thiết lập trục Y
-        yAxis.setAxisMinimum(0f);
-        yAxis.setAxisMaximum(max + 1f);   // +1 cho đẹp
-        yAxis.setGranularity(1f);
-        yAxis.setGranularityEnabled(true);
+        BarDataSet dataSet = new BarDataSet(entries, "Tín chỉ");
+        dataSet.setColors(ColorTemplate.MATERIAL_COLORS);
+        dataSet.setValueTextSize(12f);
+        
+        BarData data = new BarData(dataSet);
+        barChartTinChi.setData(data);
 
-// Không ép labelCount nữa
-        yAxis.setValueFormatter(new ValueFormatter() {
-            @Override
-            public String getFormattedValue(float value) {
-                return String.valueOf((int) value);
-            }
-        });
+        XAxis xAxis = barChartTinChi.getXAxis();
+        xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setGranularity(1f);
+        xAxis.setDrawGridLines(false);
+        xAxis.setLabelRotationAngle(-45);
 
-        // Chỉ hiển thị số nguyên
-        yAxis.setValueFormatter(new ValueFormatter() {
-            @Override
-            public String getFormattedValue(float value) {
-                return String.valueOf((int) value);
-            }
-        });
-
-        barChart.getAxisRight().setEnabled(false);
-        barChart.getDescription().setEnabled(false);
-        barChart.getLegend().setEnabled(false);
-
-        barChart.animateY(1000);
-        barChart.invalidate();
-
+        barChartTinChi.getDescription().setEnabled(false);
+        barChartTinChi.getLegend().setEnabled(false);
+        barChartTinChi.animateY(1000);
+        barChartTinChi.invalidate();
     }
 }

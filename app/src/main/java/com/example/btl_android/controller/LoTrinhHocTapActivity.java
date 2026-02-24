@@ -1,8 +1,10 @@
 package com.example.btl_android.controller;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -11,6 +13,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import com.example.btl_android.R;
 import com.example.btl_android.adapters.MonHocAdapter;
@@ -29,6 +32,7 @@ public class LoTrinhHocTapActivity extends AppCompatActivity {
     private Button btnSyncData, btnAnalyze;
     private LinearLayout layoutResult;
     private ListView lvSuggestMonHoc;
+    private Toolbar toolbar;
 
     private MonHocDAO monHocDAO;
     private List<MonHoc> allMonHoc;
@@ -42,6 +46,7 @@ public class LoTrinhHocTapActivity extends AppCompatActivity {
         setContentView(R.layout.activity_lo_trinh_hoc_tap);
 
         initViews();
+        setupToolbar();
         monHocDAO = new MonHocDAO(this);
         
         loadCurrentStats();
@@ -49,6 +54,7 @@ public class LoTrinhHocTapActivity extends AppCompatActivity {
     }
 
     private void initViews() {
+        toolbar = findViewById(R.id.toolbar);
         tvCurrentTinChi = findViewById(R.id.tvCurrentTinChi);
         tvCurrentGPA = findViewById(R.id.tvCurrentGPA);
         tvHocTiepResult = findViewById(R.id.tvHocTiepResult);
@@ -58,6 +64,16 @@ public class LoTrinhHocTapActivity extends AppCompatActivity {
         btnAnalyze = findViewById(R.id.btnAnalyze);
         layoutResult = findViewById(R.id.layoutResult);
         lvSuggestMonHoc = findViewById(R.id.lvSuggestMonHoc);
+    }
+
+    private void setupToolbar() {
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+        // Sửa lỗi nút quay lại không hoạt động
+        toolbar.setNavigationOnClickListener(v -> finish());
     }
 
     private void loadCurrentStats() {
@@ -91,8 +107,19 @@ public class LoTrinhHocTapActivity extends AppCompatActivity {
         });
 
         btnAnalyze.setOnClickListener(v -> {
+            hideKeyboard(); // Ẩn bàn phím khi nhấn phân tích
             analyzeLoTrinh();
         });
+    }
+
+    private void hideKeyboard() {
+        View view = this.getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) {
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            }
+        }
     }
 
     private void analyzeLoTrinh() {
@@ -110,7 +137,7 @@ public class LoTrinhHocTapActivity extends AppCompatActivity {
 
         layoutResult.setVisibility(View.VISIBLE);
 
-        // --- TÍNH NĂNG 2: LỘ TRÌNH HỌC TIẾP ---
+        // --- TÍNH TOÁN HỌC TIẾP ---
         int remainingCredits = TOTAL_CREDITS_REQUIRED - currentTinChi;
         if (remainingCredits > 0) {
             float totalPointsNeeded = (targetGPA * TOTAL_CREDITS_REQUIRED) - (currentGPA * currentTinChi);
@@ -133,12 +160,11 @@ public class LoTrinhHocTapActivity extends AppCompatActivity {
             tvHocTiepResult.setText("Bạn đã hoàn thành đủ " + TOTAL_CREDITS_REQUIRED + " tín chỉ.");
         }
 
-        // --- TÍNH NĂNG 1: LỘ TRÌNH CẢI THIỆN TẠI THỜI ĐIỂM HIỆN TẠI ---
+        // --- ĐỀ XUẤT CẢI THIỆN ---
         calculateImprovementNow(targetGPA);
     }
 
     private void calculateImprovementNow(float targetGPA) {
-        // Lấy các môn điểm thấp (< 2.5)
         List<MonHoc> lowScoreSubjects = new ArrayList<>();
         for (MonHoc mh : allMonHoc) {
             if (mh.getDiemTongKet4() < 2.5 && !"Đang học".equals(mh.getTrangThai())) {
@@ -146,25 +172,19 @@ public class LoTrinhHocTapActivity extends AppCompatActivity {
             }
         }
         
-        // Sắp xếp ưu tiên:
-        // 1. Tín chỉ cao nhất (Vì thay thế môn 3-4 tín sẽ kéo GPA mạnh hơn 1-2 tín)
-        // 2. NẾU CÙNG TÍN CHỈ: Ưu tiên điểm thấp nhất (ví dụ F (0.0) sẽ trước D (1.0))
         Collections.sort(lowScoreSubjects, (o1, o2) -> {
             if (o1.getSoTinChi() != o2.getSoTinChi()) {
-                return o2.getSoTinChi() - o1.getSoTinChi(); // Ưu tiên tín chỉ nhiều
+                return o2.getSoTinChi() - o1.getSoTinChi();
             }
-            return Float.compare(o1.getDiemTongKet4(), o2.getDiemTongKet4()); // Ưu tiên điểm thấp hơn
+            return Float.compare(o1.getDiemTongKet4(), o2.getDiemTongKet4());
         });
 
         float tempTotalPoints = currentGPA * currentTinChi;
         int count = 0;
         List<MonHoc> suggestList = new ArrayList<>();
 
-        // Giả lập cải thiện từng môn lên điểm A (4.0) cho đến khi đạt target hoặc hết môn
         for (MonHoc mh : lowScoreSubjects) {
             if (tempTotalPoints / currentTinChi >= targetGPA) break;
-            
-            // Điểm tăng thêm = (Điểm mới 4.0 - Điểm cũ) * số tín
             tempTotalPoints += (4.0f - mh.getDiemTongKet4()) * mh.getSoTinChi();
             count++;
             suggestList.add(mh);
@@ -184,6 +204,7 @@ public class LoTrinhHocTapActivity extends AppCompatActivity {
 
         MonHocAdapter adapter = new MonHocAdapter(this, suggestList);
         lvSuggestMonHoc.setAdapter(adapter);
+        lvSuggestMonHoc.setNestedScrollingEnabled(true);
     }
 
     private String getBreakdownText(float avgNeeded, int N) {

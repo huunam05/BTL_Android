@@ -1,65 +1,59 @@
 package com.example.btl_android.controller;
 
 import android.content.Intent;
+import android.content.DialogInterface;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.btl_android.R;
 import com.example.btl_android.adapters.MonHocAdapter;
+import com.example.btl_android.model.dao.KyHocDAO;
 import com.example.btl_android.model.dao.MonHocDAO;
 import com.example.btl_android.model.entity.KyHoc;
 import com.example.btl_android.model.entity.MonHoc;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 public class ChiTietKyHocActivity extends AppCompatActivity {
 
-    // Views
     private ImageButton btnBack, btnEdit;
-    private TextView tvTenKy, tvGpaKy, tvTrangThai;
-    private TextView tvTongTinChi, tvSoMonHoc;
+    private TextView tvTenKy, tvGpaKy, tvTrangThai, tvTongTinChi, tvSoMonHoc;
     private ListView lvMonHoc;
     private LinearLayout layoutEmpty;
     private FloatingActionButton fabAddMonHoc;
 
-    // Data
     private KyHoc kyHoc;
     private List<MonHoc> listMonHoc;
     private MonHocAdapter adapter;
-    private MonHocDAO monHocDAO = new MonHocDAO(this);
+    private MonHocDAO monHocDAO;
+    private KyHocDAO kyHocDAO;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chi_tiet_ky_hoc);
 
-        // Khởi tạo views
+        monHocDAO = new MonHocDAO(this);
+        kyHocDAO = new KyHocDAO(this);
+
         initViews();
-
         loadData();
-
-        // Hiển thị thông tin kỳ học
         displayKyHocInfo();
-
-        // Setup adapter cho ListView
         setupAdapter();
-
-        // Setup các sự kiện
         setupClickListeners();
-
-        // Tính toán GPA ngay khi load dữ liệu
-        calculateAndUpdateGPA();
+        setupBottomNavigation();
     }
 
     private void initViews() {
@@ -76,28 +70,23 @@ public class ChiTietKyHocActivity extends AppCompatActivity {
     }
 
     private void loadData() {
-        // Lấy từ Intent
         kyHoc = (KyHoc) getIntent().getSerializableExtra("kyHoc");
         if (kyHoc == null) {
             finish();
             return;
         }
-
-        // Lấy danh sách môn học từ database
         listMonHoc = monHocDAO.getMonHocByKy(kyHoc.getId());
     }
 
     private void displayKyHocInfo() {
         tvTenKy.setText(kyHoc.getTenKy());
-
-        // Trạng thái
-        if (kyHoc.isTrangThai()) {
-            tvTrangThai.setText("Đã hoàn thành");
-        } else {
-            tvTrangThai.setText("Đang học");
-        }
-
-        // Số môn học
+        tvTongTinChi.setText(String.valueOf(kyHoc.getTongTinChiKy()));
+        tvGpaKy.setText(
+                kyHoc.getGpaKy() > 0
+                        ? String.format(Locale.getDefault(), "%.2f", kyHoc.getGpaKy())
+                        : "--"
+        );
+        tvTrangThai.setText(kyHoc.isTrangThai() ? "Đã hoàn thành" : "Đang học");
         tvSoMonHoc.setText(String.valueOf(listMonHoc.size()));
     }
 
@@ -120,81 +109,86 @@ public class ChiTietKyHocActivity extends AppCompatActivity {
     private void setupClickListeners() {
         btnBack.setOnClickListener(v -> finish());
 
-        btnEdit.setOnClickListener(v -> {
-            Toast.makeText(ChiTietKyHocActivity.this, "Chức năng chỉnh sửa kỳ học", Toast.LENGTH_SHORT).show();
-        });
+        btnEdit.setOnClickListener(v -> showEditKyHocDialog());
 
-        fabAddMonHoc.setOnClickListener(v -> {
-            Toast.makeText(ChiTietKyHocActivity.this, "Thêm môn học mới", Toast.LENGTH_SHORT).show();
-        });
-
-        lvMonHoc.setOnItemClickListener((parent, view, position, id) -> {
-            MonHoc monHoc = listMonHoc.get(position);
-            Toast.makeText(ChiTietKyHocActivity.this, "Xem chi tiết: " + monHoc.getTenMon(), Toast.LENGTH_SHORT).show();
-        });
-
-        setupBottomNavigation();
+        fabAddMonHoc.setOnClickListener(v ->
+                Toast.makeText(this, "Thêm môn học mới", Toast.LENGTH_SHORT).show()
+        );
     }
 
+    // ================== BOTTOM NAVIGATION ==================
     private void setupBottomNavigation() {
         findViewById(R.id.btnTrangChu).setOnClickListener(v -> {
-            Toast.makeText(this, "Trang chủ", Toast.LENGTH_SHORT).show();
-            startActivity(new Intent(ChiTietKyHocActivity.this, MainActivity.class));
+            startActivity(new Intent(this, MainActivity.class));
             finish();
         });
+
         findViewById(R.id.btnThongKe).setOnClickListener(v -> {
-            Toast.makeText(this, "Thống kê", Toast.LENGTH_SHORT).show();
             startActivity(new Intent(this, ThongKe.class));
             finish();
         });
+
         findViewById(R.id.btnCongCu).setOnClickListener(v -> {
-            Toast.makeText(this, "Công cụ", Toast.LENGTH_SHORT).show();
             startActivity(new Intent(this, CongCuActivity.class));
             finish();
         });
-        findViewById(R.id.btnCaiDat).setOnClickListener(v -> Toast.makeText(this, "Cài đặt", Toast.LENGTH_SHORT).show());
+
+        findViewById(R.id.btnCaiDat).setOnClickListener(v ->
+                Toast.makeText(this, "Cài đặt", Toast.LENGTH_SHORT).show()
+        );
     }
 
-    public void updateListMonHoc() {
-        listMonHoc = monHocDAO.getMonHocByKy(kyHoc.getId());
-        adapter.updateData(listMonHoc);
-        tvSoMonHoc.setText(String.valueOf(listMonHoc.size()));
-        updateEmptyView();
-        calculateAndUpdateGPA();
+    // ================== CHỈNH SỬA KỲ HỌC ==================
+    private void showEditKyHocDialog() {
+        View dialogView = LayoutInflater.from(this)
+                .inflate(R.layout.dialog_add_ky_hoc, null);
+
+        EditText edtTenKy = dialogView.findViewById(R.id.edtTenKy);
+        EditText edtTinChi = dialogView.findViewById(R.id.edtTinChiKy);
+        EditText edtGpa = dialogView.findViewById(R.id.edtGpaKy);
+
+        edtTenKy.setText(kyHoc.getTenKy());
+        edtTinChi.setText(String.valueOf(kyHoc.getTongTinChiKy()));
+        edtGpa.setText(kyHoc.getGpaKy() > 0 ? String.valueOf(kyHoc.getGpaKy()) : "");
+
+        new AlertDialog.Builder(this)
+                .setTitle("Chỉnh sửa kỳ học")
+                .setView(dialogView)
+                .setPositiveButton("Cập nhật", (dialog, which) -> {
+                    String ten = edtTenKy.getText().toString().trim();
+                    String tc = edtTinChi.getText().toString().trim();
+                    String gpa = edtGpa.getText().toString().trim();
+
+                    if (!ten.isEmpty() && !tc.isEmpty()) {
+                        kyHoc.setTenKy(ten);
+                        kyHoc.setTongTinChiKy(Integer.parseInt(tc));
+                        kyHoc.setGpaKy(gpa.isEmpty() ? 0 : Float.parseFloat(gpa));
+                        kyHoc.setTrangThai(!gpa.isEmpty());
+
+                        if (kyHocDAO.updateKyHoc(kyHoc)) {
+                            Toast.makeText(this, "Đã cập nhật kỳ học!", Toast.LENGTH_SHORT).show();
+                            displayKyHocInfo();
+                        }
+                    }
+                })
+                .setNeutralButton("Xóa kỳ này", (dialog, which) ->
+                        showDeleteConfirmDialog()
+                )
+                .setNegativeButton("Hủy", null)
+                .show();
     }
 
-    private void calculateAndUpdateGPA() {
-        if (listMonHoc == null || listMonHoc.isEmpty()) {
-            tvGpaKy.setText("--");
-            tvTongTinChi.setText("0");
-            return;
-        }
-
-        float tongDiemTichLuy = 0;
-        int tongTinChi = 0;
-
-        for (MonHoc mon : listMonHoc) {
-            // Chỉ tính những môn đã có điểm tổng kết (trạng thái khác "Đang học")
-            if (!"Đang học".equals(mon.getTrangThai())) {
-                tongDiemTichLuy += mon.getDiemTongKet4() * mon.getSoTinChi();
-                tongTinChi += mon.getSoTinChi();
-            }
-        }
-
-        if (tongTinChi > 0) {
-            float gpa = tongDiemTichLuy / tongTinChi;
-            tvGpaKy.setText(String.format(Locale.getDefault(), "%.2f", gpa));
-            tvTongTinChi.setText(String.valueOf(tongTinChi));
-            
-            // Cập nhật vào object kyHoc
-            kyHoc.setGpaKy(gpa);
-            kyHoc.setTongTinChiKy(tongTinChi);
-            
-            // Lưu vào database nếu cần (Giả sử có KyHocDAO)
-            // new KyHocDAO(this).updateKyHoc(kyHoc);
-        } else {
-            tvGpaKy.setText("--");
-            tvTongTinChi.setText("0");
-        }
+    private void showDeleteConfirmDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Xác nhận xóa")
+                .setMessage("Bạn có chắc muốn xóa kỳ học này và tất cả môn học bên trong không?")
+                .setPositiveButton("Xóa", (dialog, which) -> {
+                    if (kyHocDAO.deleteKyHoc(kyHoc.getId())) {
+                        Toast.makeText(this, "Đã xóa kỳ học!", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
     }
 }
