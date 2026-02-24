@@ -1,5 +1,6 @@
 package com.example.btl_android.controller;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
@@ -136,9 +137,21 @@ public class ChiTietKyHocActivity extends AppCompatActivity {
     }
 
     private void setupBottomNavigation() {
-        findViewById(R.id.btnTrangChu).setOnClickListener(v -> Toast.makeText(this, "Trang chủ", Toast.LENGTH_SHORT).show());
-        findViewById(R.id.btnThongKe).setOnClickListener(v -> Toast.makeText(this, "Thống kê", Toast.LENGTH_SHORT).show());
-        findViewById(R.id.btnCongCu).setOnClickListener(v -> Toast.makeText(this, "Công cụ", Toast.LENGTH_SHORT).show());
+        findViewById(R.id.btnTrangChu).setOnClickListener(v -> {
+            Toast.makeText(this, "Trang chủ", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(ChiTietKyHocActivity.this, MainActivity.class));
+            finish();
+        });
+        findViewById(R.id.btnThongKe).setOnClickListener(v -> {
+            Toast.makeText(this, "Thống kê", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, ThongKe.class));
+            finish();
+        });
+        findViewById(R.id.btnCongCu).setOnClickListener(v -> {
+            Toast.makeText(this, "Công cụ", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, CongCuActivity.class));
+            finish();
+        });
         findViewById(R.id.btnCaiDat).setOnClickListener(v -> Toast.makeText(this, "Cài đặt", Toast.LENGTH_SHORT).show());
     }
 
