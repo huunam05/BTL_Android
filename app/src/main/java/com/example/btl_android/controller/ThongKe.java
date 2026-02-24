@@ -29,7 +29,6 @@ import java.util.Map;
 public class ThongKe extends AppCompatActivity {
 
     private BarChart barChartGrades, barChartTinChi;
-    private TextView tvTongTinChi, tvCpaHienTai, tvXepLoai;
     private ImageButton btnBack;
     
     private KyHocDAO kyHocDAO;
@@ -52,8 +51,6 @@ public class ThongKe extends AppCompatActivity {
     private void initViews() {
         barChartGrades = findViewById(R.id.barChartGrades);
         barChartTinChi = findViewById(R.id.barChartTinChi);
-        tvTongTinChi = findViewById(R.id.tvTongTinChi);
-        tvCpaHienTai = findViewById(R.id.tvCpaHienTai);
         btnBack = findViewById(R.id.btnBack);
 
         btnBack.setOnClickListener(v -> finish());
@@ -63,10 +60,6 @@ public class ThongKe extends AppCompatActivity {
         monHocDAO.syncGlobalStats();
         SinhVien sv = sinhVienDAO.getSinhVien();
         if (sv == null) return;
-
-        tvTongTinChi.setText(String.valueOf(sv.getTongTinChiTichLuy()));
-        tvCpaHienTai.setText(String.format("%.2f", sv.getCpaHienTai()));
-        tvXepLoai.setText(getXepLoai(sv.getCpaHienTai()));
 
         // 1. Thống kê phân bố điểm chữ (A, B, C...)
         drawGradeDistributionChart();
@@ -83,8 +76,11 @@ public class ThongKe extends AppCompatActivity {
 
         for (MonHoc mh : allMonHoc) {
             String g = mh.getDiemChu();
-            if (g != null && gradeCount.containsKey(g)) {
-                gradeCount.put(g, gradeCount.get(g) + 1);
+            if (g != null) {
+                g = g.trim();
+                if (gradeCount.containsKey(g)) {
+                    gradeCount.put(g, gradeCount.get(g) + 1);
+                }
             }
         }
 
@@ -93,8 +89,8 @@ public class ThongKe extends AppCompatActivity {
             entries.add(new BarEntry(i, gradeCount.get(grades[i])));
         }
 
-        BarDataSet dataSet = new BarDataSet(entries, "Số lượng điểm chữ");
-        dataSet.setColors(ColorTemplate.JOYFUL_COLORS);
+        BarDataSet dataSet = new BarDataSet(entries, "Số lượng môn học");
+        dataSet.setColors(ColorTemplate.COLORFUL_COLORS);
         dataSet.setValueTextSize(12f);
 
         BarData data = new BarData(dataSet);
@@ -104,7 +100,10 @@ public class ThongKe extends AppCompatActivity {
         xAxis.setValueFormatter(new IndexAxisValueFormatter(grades));
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setGranularity(1f);
+        xAxis.setDrawGridLines(false);
+        
         barChartGrades.getDescription().setEnabled(false);
+        barChartGrades.getLegend().setEnabled(false);
         barChartGrades.animateY(1000);
         barChartGrades.invalidate();
     }
@@ -114,14 +113,18 @@ public class ThongKe extends AppCompatActivity {
         List<BarEntry> entries = new ArrayList<>();
         List<String> labels = new ArrayList<>();
 
-        for (int i = 0; i < listAll.size(); i++) {
-            KyHoc kh = listAll.get(listAll.size() - 1 - i);
-            entries.add(new BarEntry(i, kh.getTongTinChiKy()));
+        // Vẽ từ kỳ cũ đến kỳ mới
+        int index = 0;
+        for (int i = listAll.size() - 1; i >= 0; i--) {
+            KyHoc kh = listAll.get(i);
+            entries.add(new BarEntry(index, kh.getTongTinChiKy()));
             labels.add(kh.getTenKy());
+            index++;
         }
 
-        BarDataSet dataSet = new BarDataSet(entries, "Tín chỉ hoàn thành");
+        BarDataSet dataSet = new BarDataSet(entries, "Tín chỉ");
         dataSet.setColors(ColorTemplate.MATERIAL_COLORS);
+        dataSet.setValueTextSize(12f);
         
         BarData data = new BarData(dataSet);
         barChartTinChi.setData(data);
@@ -129,17 +132,13 @@ public class ThongKe extends AppCompatActivity {
         XAxis xAxis = barChartTinChi.getXAxis();
         xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setGranularity(1f);
+        xAxis.setDrawGridLines(false);
         xAxis.setLabelRotationAngle(-45);
+
         barChartTinChi.getDescription().setEnabled(false);
+        barChartTinChi.getLegend().setEnabled(false);
         barChartTinChi.animateY(1000);
         barChartTinChi.invalidate();
-    }
-
-    private String getXepLoai(float cpa) {
-        if (cpa >= 3.6) return "Xuất sắc";
-        if (cpa >= 3.2) return "Giỏi";
-        if (cpa >= 2.5) return "Khá";
-        if (cpa >= 2.0) return "Trung bình";
-        return "Yếu";
     }
 }
