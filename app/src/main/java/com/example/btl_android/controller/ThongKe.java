@@ -115,7 +115,7 @@ public class ThongKe extends AppCompatActivity {
 
         // ÉP KIỂU SỐ NGUYÊN cho trục Y (bên trái)
         YAxis leftAxis = barChartGrades.getAxisLeft();
-        leftAxis.setGranularity(1f); // Khoảng cách giữa các vạch là 1 đơn vị
+        leftAxis.setGranularity(1f);
         leftAxis.setValueFormatter(new ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
@@ -123,7 +123,6 @@ public class ThongKe extends AppCompatActivity {
             }
         });
 
-        // Ẩn trục Y bên phải để nhìn gọn hơn
         barChartGrades.getAxisRight().setEnabled(false);
         
         barChartGrades.getDescription().setEnabled(false);
