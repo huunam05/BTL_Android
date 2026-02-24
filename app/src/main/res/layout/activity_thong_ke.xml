@@ -3,10 +3,12 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F4F6FA">
+    android:background="#F4F6FA"
+    android:fitsSystemWindows="true">
 
     <!-- TOOLBAR -->
     <LinearLayout
@@ -46,7 +48,6 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- BIỂU ĐỒ PHÂN BỐ ĐIỂM -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -58,7 +59,6 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -74,7 +74,6 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- BIỂU ĐỒ TÍN CHỈ THEO KỲ -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -86,7 +85,6 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -104,5 +102,4 @@
 
         </LinearLayout>
     </ScrollView>
-
 </LinearLayout>
