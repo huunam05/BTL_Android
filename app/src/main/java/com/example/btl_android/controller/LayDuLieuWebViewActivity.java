@@ -94,7 +94,6 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
     }
 
     private void runScrapingScript() {
-        // Script cải tiến: Lấy cả môn chưa có điểm (diemTK10 rỗng hoặc '-')
         String script = "javascript:(function() { " +
                 "   var rows = document.querySelectorAll('tr.kTableRow, tr.kTableAltRow'); " +
                 "   var data = []; " +
@@ -131,7 +130,6 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
                     return;
                 }
 
-                // Sử dụng Map để lọc trùng môn, ưu tiên môn có điểm cao nhất hoặc môn mới nhất (chưa thi)
                 Map<String, MonHoc> distinctMonHocMap = new HashMap<>();
                 int ignoredCount = 0;
 
@@ -140,7 +138,6 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
                     String maHP = obj.getString("maHP");
                     String tenMon = obj.getString("tenMon");
 
-                    // BỘ LỌC: Loại bỏ môn Quân sự/Thể chất/TA cơ bản/Kỹ năng CNTT
                     if (isIgnoredSubject(maHP, tenMon)) {
                         ignoredCount++;
                         continue;
@@ -158,17 +155,12 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
                     mh.setDiemTongKet4(parseSafeFloat(obj.getString("diemTK4")));
                     mh.setDiemChu(obj.getString("diemChu"));
                     
-                    // Xác định trạng thái dựa trên việc có điểm thi hay chưa
                     if (diemThi <= 0 && (rawDiemTK10.isEmpty() || rawDiemTK10.equals("-"))) {
                         mh.setTrangThai("Đang học");
                     } else {
                         mh.setTrangThai("Đã qua");
                     }
 
-                    // Kiểm tra trùng môn: 
-                    // 1. Nếu chưa có môn này trong map -> thêm vào.
-                    // 2. Nếu đã có, chỉ ghi đè nếu môn mới có điểm cao hơn.
-                    // 3. Nếu cả hai đều chưa có điểm, giữ lại môn hiện tại (hoặc môn sau cùng).
                     if (distinctMonHocMap.containsKey(tenMon)) {
                         if (diemTK10 > distinctMonHocMap.get(tenMon).getDiemTongKet10()) {
                             distinctMonHocMap.put(tenMon, mh);
@@ -204,24 +196,13 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
     private boolean isIgnoredSubject(String maHP, String tenMon) {
         String code = maHP.toUpperCase();
         String name = tenMon.toLowerCase();
-
-        // 1. Loại bỏ môn theo yêu cầu đặc biệt
         if (name.contains("kỹ năng sử dụng công nghệ thông tin")) return true;
-
-        // 2. Lọc theo mã học phần (Chuẩn HaUI)
         if (code.startsWith("DC") || code.startsWith("PE")) return true;
-
-        // 3. Lọc Ngoại ngữ cơ bản
         if (name.contains("tiếng") && name.contains("cơ bản")) return true;
-
-        // 4. Lọc theo từ khóa dự phòng
-        String[] ignoredKeywords = {
-            "qp&an", "quân sự", "thể dục", "bóng", "bơi", "cầu lông", "đá cầu"
-        };
+        String[] ignoredKeywords = {"qp&an", "quân sự", "thể dục", "bóng", "bơi", "cầu lông", "đá cầu"};
         for (String k : ignoredKeywords) {
             if (name.contains(k)) return true;
         }
-        
         return false;
     }
 
@@ -248,11 +229,36 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
         monHocDAO.deleteMonHocByKyHocId(targetKyHocId);
 
         int count = 0;
+        int totalTinChi = 0;
+        float totalPoints = 0;
+
         for (MonHoc mh : monHocList) {
             mh.setKyHocId(targetKyHocId);
-            if (monHocDAO.insertMonHoc(mh) > 0) count++;
+            if (monHocDAO.insertMonHoc(mh) > 0) {
+                count++;
+                // Tính toán GPA và Tín chỉ tích lũy (chỉ những môn đã có điểm)
+                if (mh.getDiemTongKet4() >= 0 && mh.getDiemChu() != null &&
+                        !mh.getDiemChu().isEmpty() && !mh.getDiemChu().equals("-")) {
+                    totalTinChi += mh.getSoTinChi();
+                    totalPoints += (mh.getDiemTongKet4() * mh.getSoTinChi());
+                }
+            }
         }
-        Toast.makeText(this, "Đã lưu " + count + " môn học thành công!", Toast.LENGTH_LONG).show();
+
+        float gpaWeb = (totalTinChi > 0) ? (totalPoints / totalTinChi) : 0;
+
+        // Cập nhật lại bản ghi Kỳ học để MainActivity có thể đọc được GPA mới
+        KyHoc webKy = new KyHoc();
+        webKy.setId(targetKyHocId);
+        webKy.setSinhVienId(1);
+        webKy.setTenKy("Dữ liệu từ Website");
+        webKy.setGpaKy(gpaWeb);
+        webKy.setTongTinChiKy(totalTinChi);
+        webKy.setTrangThai(true);
+
+        kyHocDAO.updateKyHoc(webKy);
+
+        Toast.makeText(this, "Đã lưu " + count + " môn và cập nhật GPA!", Toast.LENGTH_LONG).show();
         finish();
     }
 
