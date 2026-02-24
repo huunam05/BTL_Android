@@ -15,6 +15,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Btl_Android">
         <activity
+            android:name=".controller.LayDiemTPWebViewActivity"
+            android:exported="false"
+            android:label="Lấy điểm thành phần" />
+        <activity
             android:name=".controller.ThongKe"
             android:exported="false" />
         <activity

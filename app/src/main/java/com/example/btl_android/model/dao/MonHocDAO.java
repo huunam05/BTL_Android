@@ -74,6 +74,12 @@ public class MonHocDAO {
         return db.insert("MonHoc", null, values);
     }
 
+    public boolean updateMonHoc(MonHoc mh) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentValues values = getMonHocContentValues(mh);
+        return db.update("MonHoc", values, "id = ?", new String[]{String.valueOf(mh.getId())}) > 0;
+    }
+
     public boolean deleteMonHocByKyHocId(int kyHocId) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         return db.delete("MonHoc", "ky_hoc_id = ?", new String[]{String.valueOf(kyHocId)}) > 0;

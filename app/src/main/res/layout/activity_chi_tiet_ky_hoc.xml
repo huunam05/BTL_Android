@@ -9,8 +9,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:layout_above="@+id/nav_container_detail"> 
+        android:orientation="vertical"> 
         
         <LinearLayout
             android:layout_width="match_parent"
@@ -70,8 +69,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="20dp"
-                        android:background="@drawable/gradient_card_header">
+                        android:padding="24dp"
+                        android:background="#2196F3">
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -83,16 +82,23 @@
                             android:id="@+id/tvTenKy"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Kỳ 1 - 2024-2025"
-                            android:textSize="24sp"
+                            android:text="---"
+                            android:textSize="26sp"
                             android:textStyle="bold"
                             android:textColor="#FFFFFF"
                             android:layout_marginTop="4dp"/>
+                        
+                        <View 
+                            android:layout_width="match_parent" 
+                            android:layout_height="1dp" 
+                            android:background="#40FFFFFF"
+                            android:layout_marginTop="16dp"
+                            android:layout_marginBottom="16dp"/>
+
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:layout_marginTop="16dp">
+                            android:orientation="horizontal">
                             <LinearLayout
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
@@ -109,7 +115,7 @@
                                     android:id="@+id/tvGpaKy"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="3.45"
+                                    android:text="0.00"
                                     android:textSize="32sp"
                                     android:textStyle="bold"
                                     android:textColor="#FFFFFF"
@@ -132,11 +138,11 @@
                                     android:id="@+id/tvTrangThai"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Đã hoàn thành"
+                                    android:text="---"
                                     android:textSize="14sp"
                                     android:textStyle="bold"
-                                    android:textColor="#FFFFFF"
-                                    android:background="@drawable/bg_status_chip"
+                                    android:textColor="#2196F3"
+                                    android:background="@android:color/white"
                                     android:padding="8dp"
                                     android:layout_marginTop="8dp"/>
                             </LinearLayout>
@@ -156,16 +162,23 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:padding="20dp">
+                        android:padding="20dp"
+                        android:gravity="center_vertical">
+                        <ImageView
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:src="@android:drawable/ic_menu_agenda"
+                            app:tint="#2196F3"/>
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:orientation="vertical">
+                            android:orientation="vertical"
+                            android:layout_marginStart="16dp">
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="TỔNG TÍN CHỈ"
+                                android:text="TỔNG TÍN CHỈ KỲ NÀY"
                                 android:textSize="12sp"
                                 android:textColor="#666666"
                                 android:textStyle="bold"/>
@@ -173,129 +186,27 @@
                                 android:id="@+id/tvTongTinChi"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="15"
+                                android:text="0"
                                 android:textSize="28sp"
                                 android:textStyle="bold"
                                 android:textColor="#2196F3"
                                 android:layout_marginTop="4dp"/>
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="tín chỉ"
-                                android:textSize="12sp"
-                                android:textColor="#999999"
-                                android:layout_marginTop="2dp"/>
-                        </LinearLayout>
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:gravity="end">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="SỐ MÔN HỌC"
-                                android:textSize="12sp"
-                                android:textColor="#666666"
-                                android:textStyle="bold"/>
-                            <TextView
-                                android:id="@+id/tvSoMonHoc"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="5"
-                                android:textSize="28sp"
-                                android:textStyle="bold"
-                                android:textColor="#FF9800"
-                                android:layout_marginTop="4dp"/>
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="môn học"
-                                android:textSize="12sp"
-                                android:textColor="#999999"
-                                android:layout_marginTop="2dp"/>
                         </LinearLayout>
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
-                <LinearLayout
+                <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingLeft="16dp"
-                    android:paddingRight="16dp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"
-                    android:gravity="center_vertical">
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="DANH SÁCH CÁC MÔN HỌC"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:textColor="#333333"/>
-                </LinearLayout>
-
-                <ListView
-                    android:id="@+id/lvMonHoc"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="16dp"
-                    android:layout_marginRight="16dp"
-                    android:layout_marginBottom="16dp"
-                    android:divider="@android:color/transparent"
-                    android:dividerHeight="8dp"
-                    android:background="@android:color/transparent"/>
-
-                <LinearLayout
-                    android:id="@+id/layoutEmpty"
-                    android:layout_width="match_parent"
-                    android:layout_height="200dp"
-                    android:orientation="vertical"
+                    android:layout_margin="24dp"
+                    android:text="Để thay đổi thông tin kỳ học (Số tín chỉ, Điểm GPA), vui lòng nhấn vào biểu tượng bút chì ở góc trên bên phải màn hình."
+                    android:textSize="14sp"
+                    android:textColor="#999999"
                     android:gravity="center"
-                    android:visibility="gone">
-                    <ImageView
-                        android:layout_width="80dp"
-                        android:layout_height="80dp"
-                        android:src="@android:drawable/ic_dialog_info"
-                        app:tint="#CCCCCC"
-                        android:alpha="0.5"/>
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Chưa có môn học nào"
-                        android:textSize="16sp"
-                        android:textColor="#999999"
-                        android:layout_marginTop="16dp"/>
-                </LinearLayout>
+                    android:lineSpacingExtra="4dp"/>
 
             </LinearLayout>
         </ScrollView>
     </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/nav_container_detail"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true">
-        <include layout="@layout/layout_bottom_nav" />
-    </LinearLayout>
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabAddMonHoc"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginEnd="24dp"
-        android:layout_marginBottom="84dp"
-        android:src="@android:drawable/ic_input_add"
-        app:tint="#FFFFFF"
-        app:backgroundTint="#4CAF50"
-        app:borderWidth="0dp"
-        app:elevation="10dp"
-        android:contentDescription="Thêm môn học"/>
 
 </RelativeLayout>

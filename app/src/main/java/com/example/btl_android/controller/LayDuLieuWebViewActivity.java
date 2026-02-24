@@ -28,9 +28,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class LayDuLieuWebViewActivity extends AppCompatActivity {
 
@@ -72,8 +70,6 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
         webSettings.setAllowFileAccess(true);
-        webSettings.setBuiltInZoomControls(true);
-        webSettings.setDisplayZoomControls(false);
 
         wvLaydiem.setWebViewClient(new WebViewClient() {
             @Override
@@ -87,13 +83,12 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
             }
         });
 
-        wvLaydiem.setWebChromeClient(new WebChromeClient());
         wvLaydiem.addJavascriptInterface(new WebDataInterface(), "AndroidBridge");
-
         wvLaydiem.loadUrl("https://sv.haui.edu.vn");
     }
 
     private void runScrapingScript() {
+        // Lấy TẤT CẢ các dòng, kể cả dòng chưa có điểm (diemTK10 trống)
         String script = "javascript:(function() { " +
                 "   var rows = document.querySelectorAll('tr.kTableRow, tr.kTableAltRow'); " +
                 "   var data = []; " +
@@ -109,9 +104,7 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
                 "               diemTK4: cols[12].innerText.trim(), " +
                 "               diemChu: cols[13].innerText.trim() " +
                 "           }; " +
-                "           if (item.tenMon !== '' && item.diemTK10 !== '' && !isNaN(parseFloat(item.soTinChi))) { " +
-                "               data.push(item); " +
-                "           } " +
+                "           if (item.tenMon !== '' && !isNaN(parseFloat(item.soTinChi))) data.push(item); " +
                 "       } " +
                 "   }); " +
                 "   AndroidBridge.sendData(JSON.stringify(data)); " +
@@ -124,60 +117,30 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
         public void sendData(String jsonData) {
             try {
                 JSONArray jsonArray = new JSONArray(jsonData);
-                if (jsonArray.length() == 0) {
-                    runOnUiThread(() -> Toast.makeText(LayDuLieuWebViewActivity.this,
-                            "Không tìm thấy dữ liệu tích lũy.", Toast.LENGTH_LONG).show());
-                    return;
-                }
-
-                // Sử dụng Map để lọc trùng môn, chỉ giữ lại môn có điểm cao nhất
-                Map<String, MonHoc> distinctMonHocMap = new HashMap<>();
-                int ignoredCount = 0;
+                List<MonHoc> monHocList = new ArrayList<>();
+                StringBuilder dataToShow = new StringBuilder();
 
                 for (int i = 0; i < jsonArray.length(); i++) {
                     JSONObject obj = jsonArray.getJSONObject(i);
                     String maHP = obj.getString("maHP");
                     String tenMon = obj.getString("tenMon");
 
-                    // BỘ LỌC: Loại bỏ môn Quân sự/Thể chất/TA cơ bản/Kỹ năng CNTT
-                    if (isIgnoredSubject(maHP, tenMon)) {
-                        ignoredCount++;
-                        continue;
-                    }
-
-                    float diemTK10 = parseSafeFloat(obj.getString("diemTK10"));
+                    if (isIgnoredSubject(maHP, tenMon)) continue;
 
                     MonHoc mh = new MonHoc();
                     mh.setTenMon(tenMon);
                     mh.setSoTinChi((int) parseSafeFloat(obj.getString("soTinChi")));
                     mh.setDiemThi(parseSafeFloat(obj.getString("diemThi")));
-                    mh.setDiemTongKet10(diemTK10);
+                    mh.setDiemTongKet10(parseSafeFloat(obj.getString("diemTK10")));
                     mh.setDiemTongKet4(parseSafeFloat(obj.getString("diemTK4")));
                     mh.setDiemChu(obj.getString("diemChu"));
-                    mh.setTrangThai("Đã qua");
+                    mh.setTrangThai(mh.getDiemChu().isEmpty() ? "Đang học" : "Đã qua");
+                    monHocList.add(mh);
 
-                    // Kiểm tra trùng môn: chỉ lấy điểm cao nhất
-                    if (distinctMonHocMap.containsKey(tenMon)) {
-                        if (diemTK10 > distinctMonHocMap.get(tenMon).getDiemTongKet10()) {
-                            distinctMonHocMap.put(tenMon, mh);
-                        }
-                    } else {
-                        distinctMonHocMap.put(tenMon, mh);
-                    }
+                    dataToShow.append("- ").append(mh.getTenMon()).append(mh.getDiemChu().isEmpty() ? " (Chưa thi)" : "").append("\n");
                 }
 
-                List<MonHoc> monHocList = new ArrayList<>(distinctMonHocMap.values());
-                StringBuilder dataToShow = new StringBuilder();
-                for (MonHoc mh : monHocList) {
-                    dataToShow.append("- ").append(mh.getTenMon()).append(" (").append(mh.getSoTinChi()).append(" TC) - ").append(mh.getDiemChu()).append("\n");
-                }
-
-                String finalSummary = "Đã lấy " + monHocList.size() + " môn tích lũy (đã lọc trùng).\n" 
-                                    + "(Đã loại bỏ " + ignoredCount + " môn không tính tích lũy)\n\n"
-                                    + dataToShow.toString();
-
-                runOnUiThread(() -> showConfirmationDialog(monHocList, finalSummary));
-
+                runOnUiThread(() -> showConfirmationDialog(monHocList, dataToShow.toString()));
             } catch (Exception e) {
                 Log.e("SCRAPING_ERROR", "Lỗi: " + e.getMessage());
             }
@@ -187,24 +150,8 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
     private boolean isIgnoredSubject(String maHP, String tenMon) {
         String code = maHP.toUpperCase();
         String name = tenMon.toLowerCase();
-
-        // 1. Loại bỏ môn theo yêu cầu đặc biệt
-        if (name.contains("kỹ năng sử dụng công nghệ thông tin")) return true;
-
-        // 2. Lọc theo mã học phần (Chuẩn HaUI)
         if (code.startsWith("DC") || code.startsWith("PE")) return true;
-
-        // 3. Lọc Ngoại ngữ cơ bản
-        if (name.contains("tiếng") && name.contains("cơ bản")) return true;
-
-        // 4. Lọc theo từ khóa dự phòng
-        String[] ignoredKeywords = {
-            "qp&an", "quân sự", "thể dục", "bóng", "bơi", "cầu lông", "đá cầu"
-        };
-        for (String k : ignoredKeywords) {
-            if (name.contains(k)) return true;
-        }
-        
+        if (name.contains("tiếng anh") && name.contains("cơ bản")) return true;
         return false;
     }
 
@@ -212,44 +159,36 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
         ScrollView scrollView = new ScrollView(this);
         TextView textView = new TextView(this);
         textView.setText(data);
-        int padding = (int) (20 * getResources().getDisplayMetrics().density);
-        textView.setPadding(padding, padding / 2, padding, padding / 2);
+        textView.setPadding(40, 20, 40, 20);
         scrollView.addView(textView);
 
         new AlertDialog.Builder(this)
-                .setTitle("Kiểm tra dữ liệu tích lũy")
+                .setTitle("Danh sách môn học")
                 .setView(scrollView)
-                .setPositiveButton("Xác nhận Lưu", (dialog, which) -> {
-                    saveDataToDatabase(monHocList);
-                })
-                .setNegativeButton("Hủy", (dialog, which) -> dialog.dismiss())
+                .setPositiveButton("Lưu vào CSDL", (dialog, which) -> saveDataToDatabase(monHocList))
+                .setNegativeButton("Hủy", null)
                 .show();
     }
 
     private void saveDataToDatabase(List<MonHoc> monHocList) {
         int targetKyHocId = getOrCreateWebKyHoc();
         monHocDAO.deleteMonHocByKyHocId(targetKyHocId);
-
-        int count = 0;
         for (MonHoc mh : monHocList) {
             mh.setKyHocId(targetKyHocId);
-            if (monHocDAO.insertMonHoc(mh) > 0) count++;
+            monHocDAO.insertMonHoc(mh);
         }
-        Toast.makeText(this, "Đã cập nhật " + count + " môn tích lũy!", Toast.LENGTH_LONG).show();
+        monHocDAO.syncGlobalStats();
         finish();
     }
 
     private float parseSafeFloat(String val) {
         if (val == null || val.trim().isEmpty() || val.equals("-")) return 0.0f;
-        try { return Float.parseFloat(val.replace(",", ".")); } 
-        catch (Exception e) { return 0.0f; }
+        try { return Float.parseFloat(val.replace(",", ".")); } catch (Exception e) { return 0.0f; }
     }
 
     private int getOrCreateWebKyHoc() {
         List<KyHoc> list = kyHocDAO.getAllKyHoc(1);
-        for (KyHoc kh : list) {
-            if (kh.getTenKy().equals("Dữ liệu từ Website")) return kh.getId();
-        }
+        for (KyHoc kh : list) if (kh.getTenKy().equals("Dữ liệu từ Website")) return kh.getId();
         KyHoc newKy = new KyHoc();
         newKy.setSinhVienId(1);
         newKy.setTenKy("Dữ liệu từ Website");
