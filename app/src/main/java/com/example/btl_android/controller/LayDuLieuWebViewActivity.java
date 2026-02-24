@@ -150,8 +150,13 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
     private boolean isIgnoredSubject(String maHP, String tenMon) {
         String code = maHP.toUpperCase();
         String name = tenMon.toLowerCase();
+        // Lọc theo mã học phần (DC: Quốc phòng, PE: Thể chất)
         if (code.startsWith("DC") || code.startsWith("PE")) return true;
+        // Lọc Tiếng Anh cơ bản
         if (name.contains("tiếng anh") && name.contains("cơ bản")) return true;
+        // Lọc môn Kỹ năng sử dụng công nghệ thông tin
+        if (name.contains("kỹ năng sử dụng công nghệ thông tin")) return true;
+        
         return false;
     }
 
