@@ -52,11 +52,11 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Lưu ý: Đăng nhập và mở tab 'Kết quả học tập' trước khi bấm"
-            android:textSize="12sp"
-            android:textColor="#666666"
             android:layout_gravity="center"
-            android:layout_marginBottom="8dp"/>
+            android:layout_marginBottom="8dp"
+            android:text="Lưu ý: Đăng nhập và mở tab 'Kết quả thi' trước khi bấm"
+            android:textColor="#666666"
+            android:textSize="12sp" />
 
         <Button
             android:id="@+id/btnLaydiem"

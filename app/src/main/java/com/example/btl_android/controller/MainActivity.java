@@ -2,14 +2,16 @@ package com.example.btl_android.controller;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -18,20 +20,25 @@ import androidx.core.view.WindowInsetsCompat;
 import com.example.btl_android.R;
 import com.example.btl_android.adapters.KyHocAdapter;
 import com.example.btl_android.model.dao.KyHocDAO;
+import com.example.btl_android.model.dao.MonHocDAO;
 import com.example.btl_android.model.dao.SinhVienDAO;
 import com.example.btl_android.model.entity.KyHoc;
+import com.example.btl_android.model.entity.SinhVien;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
     private ListView lvKyHoc;
-    private TextView tvEmpty;
+    private TextView tvEmpty, tvCpaHienTai, tvTongTinChiTichLuy, tvSoKyHoc;
     private KyHocAdapter adapter;
-    private List<KyHoc> listKyHoc;
+    private List<KyHoc> listDisplayKyHoc;
     private SinhVienDAO sinhVienDAO;
     private KyHocDAO kyHocDAO;
+    private MonHocDAO monHocDAO;
+    private FloatingActionButton fabAddKyHoc;
     private LinearLayout btnTrangChu, btnThongKe, btnCongCu, btnCaiDat;
 
     @Override
@@ -46,41 +53,64 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        // Khởi tạo view
         initViews();
-
-        // Tạo dữ liệu mẫu
         initData();
-
-        // Setup adapter
-        setupAdapter();
-
-        // Setup sự kiện click
         setupClickListeners();
     }
 
     private void initViews() {
         lvKyHoc = findViewById(R.id.lvKyHoc);
         tvEmpty = findViewById(R.id.tvEmpty);
-        btnCongCu = findViewById(R.id.btnCongCu);
+        tvCpaHienTai = findViewById(R.id.tvCpaHienTai);
+        tvTongTinChiTichLuy = findViewById(R.id.tvTongTinChiTichLuy);
+        tvSoKyHoc = findViewById(R.id.tvSoKyHoc);
+        fabAddKyHoc = findViewById(R.id.fabAddKyHoc);
+        
+        btnTrangChu = findViewById(R.id.btnTrangChu);
         btnThongKe = findViewById(R.id.btnThongKe);
         btnCongCu = findViewById(R.id.btnCongCu);
         btnCaiDat = findViewById(R.id.btnCaiDat);
     }
 
     private void initData() {
-        listKyHoc = new ArrayList<>();
         kyHocDAO = new KyHocDAO(this);
         sinhVienDAO = new SinhVienDAO(this);
-        listKyHoc = kyHocDAO.getAllKyHoc(1);
+        monHocDAO = new MonHocDAO(this);
+        refreshDisplay();
     }
 
-    private void setupAdapter() {
-        adapter = new KyHocAdapter(this, listKyHoc);
+    private void refreshDisplay() {
+        SinhVien sv = sinhVienDAO.getSinhVien();
+        int svId = (sv != null) ? sv.getId() : 1;
+
+        // 1. Lấy TẤT CẢ các kỳ học để tính toán (bao gồm cả kỳ ẩn từ Web)
+        List<KyHoc> allKyHoc = kyHocDAO.getAllKyHoc(svId);
+        
+        int tongTinChi = 0;
+        float tongDiemTichLuy = 0;
+
+        for (KyHoc kh : allKyHoc) {
+            // Chỉ tính những kỳ đã có điểm hoặc kỳ đã hoàn thành
+            if (kh.getTongTinChiKy() > 0) {
+                tongTinChi += kh.getTongTinChiKy();
+                tongDiemTichLuy += (kh.getGpaKy() * kh.getTongTinChiKy());
+            }
+        }
+
+        float cpa = (tongTinChi > 0) ? (tongDiemTichLuy / tongTinChi) : 0;
+
+        // Hiển thị lên UI
+        tvCpaHienTai.setText(String.format(Locale.getDefault(), "%.2f", cpa));
+        tvTongTinChiTichLuy.setText(String.valueOf(tongTinChi));
+
+        // 2. Lấy danh sách kỳ học HIỂN THỊ (Loại bỏ kỳ Web) để đưa vào ListView
+        listDisplayKyHoc = kyHocDAO.getDisplayKyHoc(svId);
+        tvSoKyHoc.setText(listDisplayKyHoc.size() + " kỳ");
+        
+        adapter = new KyHocAdapter(this, listDisplayKyHoc);
         lvKyHoc.setAdapter(adapter);
 
-        // Hiển thị empty view nếu không có dữ liệu
-        if (listKyHoc.isEmpty()) {
+        if (listDisplayKyHoc.isEmpty()) {
             lvKyHoc.setVisibility(View.GONE);
             tvEmpty.setVisibility(View.VISIBLE);
         } else {
@@ -90,53 +120,58 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
-        // Sự kiện click vào item
-        lvKyHoc.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                KyHoc kyHoc = listKyHoc.get(position);
-                Intent intent = new Intent(MainActivity.this, ChiTietKyHocActivity.class);
-                intent.putExtra("kyHoc", kyHoc);
-                startActivity(intent);
-            }
-        });
-
-        // Sự kiện long click vào item
-        lvKyHoc.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                KyHoc kyHoc = listKyHoc.get(position);
-                Toast.makeText(MainActivity.this, "Long click: " + kyHoc.getTenKy(), Toast.LENGTH_SHORT).show();
-                return true;
-            }
-        });
-
-        // Sự kiện click vào nút Công cụ
-        btnCongCu.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, CongCuActivity.class);
-                startActivity(intent);
-            }
-        });
-
-        // Thống kê
-        btnThongKe.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, ThongKe.class);
+        lvKyHoc.setOnItemClickListener((parent, view, position, id) -> {
+            KyHoc kyHoc = listDisplayKyHoc.get(position);
+            Intent intent = new Intent(MainActivity.this, ChiTietKyHocActivity.class);
+            intent.putExtra("kyHoc", kyHoc);
             startActivity(intent);
         });
+
+        fabAddKyHoc.setOnClickListener(v -> showAddKyHocDialog());
+
+        btnTrangChu.setOnClickListener(v -> refreshDisplay());
+        btnThongKe.setOnClickListener(v -> startActivity(new Intent(this, ThongKe.class)));
+        btnCongCu.setOnClickListener(v -> startActivity(new Intent(this, CongCuActivity.class)));
+        btnCaiDat.setOnClickListener(v -> Toast.makeText(this, "Tính năng cài đặt", Toast.LENGTH_SHORT).show());
     }
 
-    // Phương thức cập nhật dữ liệu
-    public void updateListKyHoc(List<KyHoc> newList) {
-        this.listKyHoc = newList;
-        adapter.updateData(newList);
-        if (listKyHoc.isEmpty()) {
-            lvKyHoc.setVisibility(View.GONE);
-            tvEmpty.setVisibility(View.VISIBLE);
-        } else {
-            lvKyHoc.setVisibility(View.VISIBLE);
-            tvEmpty.setVisibility(View.GONE);
-        }
+    private void showAddKyHocDialog() {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_ky_hoc, null);
+        EditText edtTenKy = dialogView.findViewById(R.id.edtTenKy);
+        EditText edtTinChi = dialogView.findViewById(R.id.edtTinChiKy);
+        EditText edtGpa = dialogView.findViewById(R.id.edtGpaKy);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Thêm kỳ học mới")
+                .setView(dialogView)
+                .setPositiveButton("Thêm", (dialog, which) -> {
+                    String tenKy = edtTenKy.getText().toString().trim();
+                    String sTinChi = edtTinChi.getText().toString().trim();
+                    String sGpa = edtGpa.getText().toString().trim();
+
+                    if (!tenKy.isEmpty() && !sTinChi.isEmpty()) {
+                        try {
+                            KyHoc newKy = new KyHoc();
+                            newKy.setSinhVienId(1);
+                            newKy.setTenKy(tenKy);
+                            newKy.setTongTinChiKy(Integer.parseInt(sTinChi));
+                            newKy.setGpaKy(sGpa.isEmpty() ? 0 : Float.parseFloat(sGpa));
+                            newKy.setTrangThai(!sGpa.isEmpty()); 
+                            
+                            kyHocDAO.insertKyHoc(newKy);
+                            refreshDisplay(); // Tự động tính toán lại CPA/Tín chỉ
+                        } catch (Exception e) {
+                            Toast.makeText(this, "Dữ liệu không hợp lệ", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshDisplay();
     }
 }

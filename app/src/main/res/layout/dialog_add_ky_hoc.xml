@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <EditText
+        android:id="@+id/edtTenKy"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Tên kỳ học (Ví dụ: Kỳ 1 - 2024)"
+        android:inputType="textCapWords"
+        android:layout_marginBottom="12dp"/>
+
+    <EditText
+        android:id="@+id/edtTinChiKy"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Tổng số tín chỉ của kỳ"
+        android:inputType="number"
+        android:layout_marginBottom="12dp"/>
+
+    <EditText
+        android:id="@+id/edtGpaKy"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="GPA của kỳ (Hệ 4)"
+        android:inputType="numberDecimal"
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="* Nếu kỳ học đang diễn ra, bạn có thể để trống GPA."
+        android:textSize="11sp"
+        android:textColor="#999999"
+        android:textStyle="italic"/>
+</LinearLayout>

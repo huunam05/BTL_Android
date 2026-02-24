@@ -194,8 +194,8 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
         // 2. Lọc theo mã học phần (Chuẩn HaUI)
         if (code.startsWith("DC") || code.startsWith("PE")) return true;
 
-        // 3. Lọc Tiếng Anh cơ bản
-        if (name.contains("tiếng anh") && name.contains("cơ bản")) return true;
+        // 3. Lọc Ngoại ngữ cơ bản
+        if (name.contains("tiếng") && name.contains("cơ bản")) return true;
 
         // 4. Lọc theo từ khóa dự phòng
         String[] ignoredKeywords = {
