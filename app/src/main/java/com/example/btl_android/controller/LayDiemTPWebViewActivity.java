@@ -115,7 +115,8 @@ public class LayDiemTPWebViewActivity extends AppCompatActivity {
 
                     for (MonHoc mh : allLocalMonHoc) {
                         // Chỉ cập nhật điểm TX cho những môn chưa có điểm kết thúc
-                        if (mh.getTenMon().equalsIgnoreCase(tenWeb)) {
+                        if (normalize(mh.getTenMon())
+                                .equals(normalize(tenWeb)))  {
                             mh.setDiemTx1(parseSafeFloat(obj.getString("tx1")));
                             mh.setDiemTx2(parseSafeFloat(obj.getString("tx2")));
                             String tx3Val = obj.getString("tx3");
@@ -149,5 +150,12 @@ public class LayDiemTPWebViewActivity extends AppCompatActivity {
         } catch (Exception e) {
             return 0.0f;
         }
+    }
+    private String normalize(String s) {
+        if (s == null) return "";
+        return s.replace("\u00a0", "")
+                .replaceAll("\\s+", " ")
+                .trim()
+                .toLowerCase();
     }
 }

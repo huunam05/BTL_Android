@@ -134,11 +134,17 @@ public class LayDuLieuWebViewActivity extends AppCompatActivity {
                     mh.setDiemTongKet10(parseSafeFloat(obj.getString("diemTK10")));
                     mh.setDiemTongKet4(parseSafeFloat(obj.getString("diemTK4")));
                     mh.setDiemChu(obj.getString("diemChu"));
-                    mh.setTrangThai(mh.getDiemChu().isEmpty() ? "Đang học" : "Đã qua");
+
                     monHocList.add(mh);
 
-                    dataToShow.append("- ").append(mh.getTenMon()).append(mh.getDiemChu().isEmpty() ? " (Chưa thi)" : "").append("\n");
-                }
+                    boolean daThi = mh.getDiemTongKet10() > 0;
+
+                    mh.setTrangThai(daThi ? "Đã thi" : "Đang học");
+
+                    dataToShow.append("- ")
+                            .append(mh.getTenMon())
+                            .append(daThi ? "" : " (Chưa thi)")
+                            .append("\n");                }
 
                 runOnUiThread(() -> showConfirmationDialog(monHocList, dataToShow.toString()));
             } catch (Exception e) {
